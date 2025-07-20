@@ -75,13 +75,13 @@ pipeline {
                                 echo "🔄 Upgrading existing Prometheus release..."
                                 helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring \
-                                    -f Prometheus/prometheus-values.yaml \
+                                    -f Prrometheus/prometheus-values.yaml \
                                     --set ingress.enabled=false
                             else
                                 echo "🚀 Installing new Prometheus release..."
                                 helm install prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring --create-namespace \
-                                    -f Prometheus/prometheus-values.yaml \
+                                    -f Prrometheus/prometheus-values.yaml \
                                     --set ingress.enabled=false
                             fi
                         '''
