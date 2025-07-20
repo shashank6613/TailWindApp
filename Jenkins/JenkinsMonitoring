@@ -2,9 +2,9 @@ pipeline {
     agent any
     environment {
         CLUSTER_NAME = 'app-clus'
-        REGION = 'us-west-2'
+        REGION       = 'us-west-2'
         GRAFANA_PASSWORD_CRED_ID = 'grafana-admin-pass'
-        EXTERNAL_IP = ''
+        EXTERNAL_IP  = ''
     }
 
     stages {
@@ -96,7 +96,7 @@ pipeline {
 
                         // Apply unified ingress
                         echo '🚀 Applying unified Ingress...'
-                        sh 'kubectl apply -f k8s/ingress/stack-ingress.yaml'
+                        sh 'kubectl apply -f K8s/ingress/stack-ingress.yaml'
                     }
                 }
             }
@@ -127,7 +127,7 @@ pipeline {
                             git config user.name "Jenkins CI"
                             git add Prometheus/prometheus-values.yaml
                             git commit -m "Update external IP to ${EXTERNAL_IP} in ingress files [ci skip]" || echo "No changes to commit"
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/My-Kubernetes-Project.git HEAD:master
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git HEAD:master
                         '''
                         echo "✅ Changes pushed to repo."
                     }
