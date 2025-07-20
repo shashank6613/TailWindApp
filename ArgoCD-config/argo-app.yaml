@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/shashank6613/My-Kubernetes-Project.git
+    repoURL: https://github.com/shashank6613/TailWindApp.git
     targetRevision: master  
-    path: k8s/manifests/  
+    path: K8s/manifests/  
   destination:
     server: https://kubernetes.default.svc
     namespace: default
