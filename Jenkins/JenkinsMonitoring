@@ -1,0 +1,153 @@
+pipeline {
+    agent any
+    environment {
+        CLUSTER_NAME = 'app-clus'
+        REGION = 'us-west-2'
+        GRAFANA_PASSWORD_CRED_ID = 'grafana-admin-pass'
+        EXTERNAL_IP = ''
+    }
+
+    stages {
+        stage('Update kubeconfig and All Kubernetes Tasks') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+
+                        // Update kubeconfig
+                        echo "🔄 Updating kubeconfig for EKS cluster '${CLUSTER_NAME}'..."
+                        sh '''
+                            aws eks update-kubeconfig \
+                            --name ${CLUSTER_NAME} \
+                            --region ${REGION} \
+                            --alias ${CLUSTER_NAME}
+                        '''
+                        echo '✅ kubeconfig updated successfully.'
+
+                        // Connectivity test and patching CNI
+                        echo '🔍 Verifying connectivity...'
+                        sh """
+                            kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.19.5/config/master/aws-k8s-cni.yaml
+                            kubectl get nodes --context=${CLUSTER_NAME}
+                        """
+
+                        // Install Ingress Controller
+                        echo '🚀 Installing NGINX Ingress Controller...'
+                        sh '''
+                            helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+                            helm repo update
+                            helm install ingress-nginx ingress-nginx/ingress-nginx \
+                              --namespace ingress-nginx --create-namespace \
+                              --set controller.service.type=LoadBalancer \
+                              --set controller.publishService.enabled=true \
+                              --set controller.scope.enabled=false
+                        '''
+
+                        // Wait for LoadBalancer IP
+                        echo '⏳ Waiting for LoadBalancer IP...'
+                        timeout(time: 8, unit: 'MINUTES') {
+                            waitUntil {
+                                def lb = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}'", returnStdout: true).trim()
+                                echo "LoadBalancer address: ${lb}"
+                                return lb != ''
+                            }
+                        }
+                        echo '✅ Ingress Controller ready.'
+
+                        // Fetch External IP and update file
+                        echo "🔍 Fetching External IP from NGINX Ingress..."
+                        def externalIP = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'", returnStdout: true).trim()
+                        if (!externalIP) {
+                            echo "Hostname not found, trying IP..."
+                            externalIP = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}'", returnStdout: true).trim()
+                        }
+                        if (!externalIP) {
+                            error "❌ External IP or hostname not found for ingress-nginx-controller service!"
+                        }
+                        env.EXTERNAL_IP = externalIP
+                        echo "➡️ Current LoadBalancer external IP/hostname: ${externalIP}"
+
+                        // Install Prometheus
+                        echo '🚀 Installing Prometheus stack via Helm...'
+                        sh '''
+                            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+                            helm repo update
+                            if helm ls -n monitoring | grep -q prometheus; then
+                                echo "🔄 Upgrading existing Prometheus release..."
+                                helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+                                    --namespace monitoring \
+                                    -f Prometheus/prometheus-values.yaml \
+                                    --set ingress.enabled=false
+                            else
+                                echo "🚀 Installing new Prometheus release..."
+                                helm install prometheus prometheus-community/kube-prometheus-stack \
+                                    --namespace monitoring --create-namespace \
+                                    -f Prometheus/prometheus-values.yaml \
+                                    --set ingress.enabled=false
+                            fi
+                        '''
+
+                        echo '⏳ Waiting for Grafana pod...'
+                        timeout(time: 8, unit: 'MINUTES') {
+                            waitUntil {
+                                sh(script: "kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana --field-selector=status.phase=Running | grep grafana", returnStatus: true) == 0
+                            }
+                        }
+                        echo '✅ Grafana running.'
+
+                        // Apply unified ingress
+                        echo '🚀 Applying unified Ingress...'
+                        sh 'kubectl apply -f k8s/ingress/stack-ingress.yaml'
+                    }
+                }
+            }
+        }
+
+        stage('Configure Grafana Admin Password') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: REGION) {
+                    withCredentials([string(credentialsId: GRAFANA_PASSWORD_CRED_ID, variable: 'GRAFANA_PASSWORD')]) {
+                        echo '🔐 Creating Grafana admin-password secret...'
+                        sh '''
+                        kubectl create secret generic grafana-admin-password \
+                        --from-literal=admin-password="${GRAFANA_PASSWORD}" \
+                        -n monitoring --dry-run=client -o yaml | kubectl apply -f -
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Commit and Push Ingress Files to Repo') {
+            steps {
+                script {
+                    echo "📝 Configuring git and pushing changes..."
+                    withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh '''
+                            git config user.email "jenkins@mail.com"
+                            git config user.name "Jenkins CI"
+                            git add Prometheus/prometheus-values.yaml
+                            git commit -m "Update external IP to ${EXTERNAL_IP} in ingress files [ci skip]" || echo "No changes to commit"
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/My-Kubernetes-Project.git HEAD:master
+                        '''
+                        echo "✅ Changes pushed to repo."
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Post-deployment setup completed successfully.'
+        }
+        failure {
+            echo '❌ Post-deployment setup failed. Check logs for details.'
+            echo '❌ Cleaning up Docker images, k8 objects at all namespaces, secrets etc etc...'
+            script {
+                sh "sudo apt-get autoremove -y"
+                sh "kubectl delete all --all --all-namespaces"
+                sh "kubectl delete secrets --all --all-namespaces"
+            }
+        }
+    }
+}
