@@ -8,29 +8,26 @@ pipeline {
     }
 
     stages {
-        stage('Update kubeconfig and All Kubernetes Tasks') {
+
+        stage('Update kubeconfig and Patch CNI') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-
-                        // Update kubeconfig
                         echo "🔄 Updating kubeconfig for EKS cluster '${CLUSTER_NAME}'..."
-                        sh '''
-                            aws eks update-kubeconfig \
-                            --name ${CLUSTER_NAME} \
-                            --region ${REGION} \
-                            --alias ${CLUSTER_NAME}
-                        '''
-                        echo '✅ kubeconfig updated successfully.'
-
-                        // Connectivity test and patching CNI
-                        echo '🔍 Verifying connectivity...'
                         sh """
+                            aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION} --alias ${CLUSTER_NAME}
                             kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.19.5/config/master/aws-k8s-cni.yaml
                             kubectl get nodes --context=${CLUSTER_NAME}
                         """
+                    }
+                }
+            }
+        }
 
-                        // Install Ingress Controller
+        stage('Install Ingress Controller') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
                         echo '🚀 Installing NGINX Ingress Controller...'
                         sh '''
                             helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -41,8 +38,15 @@ pipeline {
                               --set controller.publishService.enabled=true \
                               --set controller.scope.enabled=false
                         '''
+                    }
+                }
+            }
+        }
 
-                        // Wait for LoadBalancer IP
+        stage('Wait for LoadBalancer & Update File') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
                         echo '⏳ Waiting for LoadBalancer IP...'
                         timeout(time: 8, unit: 'MINUTES') {
                             waitUntil {
@@ -51,10 +55,8 @@ pipeline {
                                 return lb != ''
                             }
                         }
-                        echo '✅ Ingress Controller ready.'
 
-                        // Fetch External IP and update file
-                        echo "🔍 Fetching External IP from NGINX Ingress..."
+                        echo '🔍 Fetching External IP from NGINX Ingress...'
                         def externalIP = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'", returnStdout: true).trim()
                         if (!externalIP) {
                             echo "Hostname not found, trying IP..."
@@ -65,8 +67,15 @@ pipeline {
                         }
                         env.EXTERNAL_IP = externalIP
                         echo "➡️ Current LoadBalancer external IP/hostname: ${externalIP}"
+                    }
+                }
+            }
+        }
 
-                        // Install Prometheus
+        stage('Install Prometheus') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
                         echo '🚀 Installing Prometheus stack via Helm...'
                         sh '''
                             helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
@@ -85,7 +94,15 @@ pipeline {
                                     --set ingress.enabled=false
                             fi
                         '''
+                    }
+                }
+            }
+        }
 
+        stage('Wait for Grafana Pod & Apply Unified Ingress') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
                         echo '⏳ Waiting for Grafana pod...'
                         timeout(time: 8, unit: 'MINUTES') {
                             waitUntil {
@@ -93,8 +110,6 @@ pipeline {
                             }
                         }
                         echo '✅ Grafana running.'
-
-                        // Apply unified ingress
                         echo '🚀 Applying unified Ingress...'
                         sh 'kubectl apply -f K8s/ingress/stack-ingress.yaml'
                     }
@@ -142,8 +157,8 @@ pipeline {
         }
         failure {
             echo '❌ Post-deployment setup failed. Check logs for details.'
-            echo '❌ Cleaning up Docker images, k8 objects at all namespaces, secrets etc etc...'
             script {
+                echo '🧹 Cleaning up Docker images, k8 objects at all namespaces, secrets etc...'
                 sh "sudo apt-get autoremove -y"
                 sh "kubectl delete all --all --all-namespaces"
                 sh "kubectl delete secrets --all --all-namespaces"
