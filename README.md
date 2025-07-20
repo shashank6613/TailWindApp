@@ -5,8 +5,8 @@
 5. Create pipeline jobs, and run the Controller jenkinsfile which run all other jenkinsfiles one after another.
 6. Check pods, deployments, service for prometheus grafana argocd.
 7. Create Environment Variable name as -
-   - AWS Credentials      ID = 'aws creds'          Type = AWS Credentials
-   - Grafana Password     ID = 'grafana-admin-pass  Type = secret text
-   - Git Credentials      ID = 'git-creds'          Type = username and password
-   - Docker Credentials   ID = 'dock-creds'         Type = username and password
-   - Database Credentials ID = 'db-secrets.env'     Type = secret file
+   - AWS Credentials      >> ID = 'aws creds'           >> Type = AWS Credentials
+   - Grafana Password     >> ID = 'grafana-admin-pass   >> Type = secret text
+   - Git Credentials      >> ID = 'git-creds'           >> Type = username and password
+   - Docker Credentials   >> ID = 'dock-creds'          >> Type = username and password
+   - Database Credentials >> ID = 'db-secrets-file'     >> Type = secret file
