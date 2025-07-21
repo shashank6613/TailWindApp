@@ -218,10 +218,6 @@ pipeline {
                 sh "sudo apt-get autoremove -y"
                 sh "kubectl delete all --all --all-namespaces"
                 sh "kubectl delete secrets --all --all-namespaces"
-                sh "kubectl delete application ${APP_NAME) -n argocd"
-                sh "helm uninstall argocd -n argocd"
-                sh "kubectl delete crd applications.argoproj.io applicationsets.argoproj.io appprojects.argoproj.io || true"
-
             }
         }
     }
