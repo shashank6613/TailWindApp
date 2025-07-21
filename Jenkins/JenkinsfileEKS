@@ -144,6 +144,13 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "checking for argocd CRD"
+                        sh '''
+                            if ! kubectl get crd applications.argoproj.io > /dev/null 2>&1; then
+                            echo "❌ ArgoCD CRD missing!"
+                            exit 1
+                            fi
+                        '''
                         echo "🚀 Applying ArgoCD Application manifest..."
                         sh '''
                             # Apply the Application manifest to ArgoCD
