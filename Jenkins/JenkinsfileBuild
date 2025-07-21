@@ -50,15 +50,6 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
-            steps {
-                dir(FRONTEND_DIR) {
-                    sh 'npm install'
-                    sh 'npm run build'
-                }
-            }
-        }
-
         stage('Build Backend') {
             steps {
                 dir(BACKEND_DIR) {
