@@ -10,6 +10,24 @@ pipeline {
 
     stages {
 
+        stage('Configure AWS CLI') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
+                        echo "⚙️ Configuring AWS CLI using Jenkins credentials..."
+                        sh """
+                            # Configure AWS CLI using credentials from Jenkins
+                            # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are automatically set by withCredentials block
+                            aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID
+                            aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY
+                            aws configure set default.region ${REGION}
+                            echo "✅ AWS CLI configured."
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Update kubeconfig and Patch CNI') {
             steps {
                 script {
@@ -129,6 +147,42 @@ pipeline {
                         -n monitoring --dry-run=client -o yaml | kubectl apply -f -
                         '''
                     }
+                }
+            }
+        }
+
+        stage('Capture Cluster Configurations') {
+            steps {
+                script {
+                    def outputFile = '/home/ubuntu/cluster-configurations.txt'
+                    def timestamp = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
+
+                    echo "📝 Capturing cluster configurations to ${outputFile}..."
+
+                    sh """
+                        echo "--- Cluster Configurations - ${timestamp} ---" >> ${outputFile}
+                        echo "Pods:" >> ${outputFile}
+                        kubectl get pods --all-namespaces >> ${outputFile} 2>&1
+                        echo "" >> ${outputFile}
+
+                        echo "Deployments:" >> ${outputFile}
+                        kubectl get deployments --all-namespaces >> ${outputFile} 2>&1
+                        echo "" >> ${outputFile}
+
+                        echo "Services:" >> ${outputFile}
+                        kubectl get services --all-namespaces >> ${outputFile} 2>&1
+                        echo "" >> ${outputFile}
+
+                        echo "ConfigMaps:" >> ${outputFile}
+                        kubectl get configmaps --all-namespaces >> ${outputFile} 2>&1
+                        echo "" >> ${outputFile}
+
+                        echo "Secrets:" >> ${outputFile}
+                        kubectl get secrets --all-namespaces >> ${outputFile} 2>&1
+                        echo "" >> ${outputFile}
+                        echo "--- End of Capture ---" >> ${outputFile}
+                    """
+                    echo "✅ Cluster configurations captured successfully."
                 }
             }
         }
