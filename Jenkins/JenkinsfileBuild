@@ -99,7 +99,7 @@ pipeline {
                             git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git
 
                             echo "🚀 Pushing changes..."
-                            git push origin HEAD:master
+                            git push origin HEAD:main
                         """
                     }
                 }
