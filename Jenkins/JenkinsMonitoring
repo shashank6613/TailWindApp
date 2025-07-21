@@ -111,6 +111,7 @@ pipeline {
                                     --namespace monitoring --create-namespace \
                                     -f Prrometheus/prometheus-values.yaml \
                                     --set ingress.enabled=false
+                                    --set installCRDs=true
                             fi
                         '''
                     }
