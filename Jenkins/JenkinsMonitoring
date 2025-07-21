@@ -4,6 +4,7 @@ pipeline {
         CLUSTER_NAME = 'app-clus'
         REGION       = 'us-west-2'
         GRAFANA_PASSWORD_CRED_ID = 'grafana-admin-pass'
+        APP_NAME     = 'my-app'
         EXTERNAL_IP  = ''
     }
 
@@ -162,6 +163,7 @@ pipeline {
                 sh "sudo apt-get autoremove -y"
                 sh "kubectl delete all --all --all-namespaces"
                 sh "kubectl delete secrets --all --all-namespaces"
+                sh "kubectl delete application ${APP_NAME) -n argocd"
             }
         }
     }
