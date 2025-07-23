@@ -1,5 +1,4 @@
 #!/bin/bash
-exec > /home/ubuntu/ec2-userdata.log 2>&1
 set -e
 
 echo "--- Starting ec2-tool.sh script ---"
