@@ -1,5 +1,4 @@
 #!/bin/bash
-exec > /var/log/toolVersion-userdata.log 2>&1
 set -e
 
 echo "----------------------------------------"

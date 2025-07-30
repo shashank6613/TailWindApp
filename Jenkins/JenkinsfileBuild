@@ -5,12 +5,12 @@ pipeline {
         FRONTEND_IMAGE_NAME        = 'shashank9928/linkproj-fe'
         BACKEND_IMAGE_NAME         = 'shashank9928/linkproj-be'
         DOCKER_CREDENTIALS_ID      = 'dock-creds'
-        FRONTEND_DEPLOYMENT_FILE   = 'k8s/manifests/frontend-deployment.yaml'
-        BACKEND_DEPLOYMENT_FILE    = 'k8s/manifests/backend-deployment.yaml'
+        FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/frontend-deployment.yaml'
+        BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/backend-deployment.yaml'
         FRONTEND_DIR               = 'frontend'
         BACKEND_DIR                = 'backend'
-        CLUSTER_NAME = 'app-clus'
-        REGION = 'us-west-2'
+        CLUSTER_NAME               = 'app-clus'
+        REGION                     = 'us-west-2'
     }
 
     stages {
@@ -46,15 +46,6 @@ pipeline {
                             sudo apt-get install -y nodejs
                         '''
                     }
-                }
-            }
-        }
-
-        stage('Build Frontend') {
-            steps {
-                dir(FRONTEND_DIR) {
-                    sh 'npm install'
-                    sh 'npm run build'
                 }
             }
         }
@@ -105,10 +96,10 @@ pipeline {
                             git commit --allow-empty -m 'Update image tags to build ${buildId}' || true
 
                             echo "🔐 Updating remote URL with credentials safely..."
-                            git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/My-Kubernetes-Project.git
+                            git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git
 
                             echo "🚀 Pushing changes..."
-                            git push origin HEAD:master
+                            git push origin HEAD:main
                         """
                     }
                 }
