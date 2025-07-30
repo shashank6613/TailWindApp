@@ -1,0 +1,10 @@
+1) kubectk expose service prometheus-server --type NodePort --target-port=9090 --name=prometheus-server-ext
+
+2) kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+
+import grafana dashboard id 3662
+prometheus url - http://<ip>:port
+
+
+kubectl get cm (config maps)
