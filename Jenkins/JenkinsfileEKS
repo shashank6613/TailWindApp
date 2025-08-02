@@ -8,6 +8,24 @@ pipeline {
     }
 
     stages {
+        stage('Configure AWS CLI') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
+                        echo "⚙️ Configuring AWS CLI using Jenkins credentials..."
+                        sh """
+                            # Configure AWS CLI using credentials from Jenkins
+                            # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are automatically set by withCredentials block
+                            aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID
+                            aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY
+                            aws configure set default.region ${REGION}
+                            echo "✅ AWS CLI configured."
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Check for Existing EKS Cluster') {
             steps {
                 script {
@@ -189,3 +207,4 @@ pipeline {
         }
     }
 }
+
