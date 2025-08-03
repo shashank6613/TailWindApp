@@ -8,3 +8,4 @@ prometheus url - http://<ip>:port
 
 
 kubectl get cm (config maps)
+sudo apt autoremove --purge -y         This removes leftover files from removed packages.
