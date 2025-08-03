@@ -7,7 +7,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "--- Updating apt package lists (first pass) ---"
 sudo apt update -y
-sudo apt install -y openjdk-17-jre curl python3 gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
+sudo apt install -y openjdk-21-jre curl python3 gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
 
 echo "--- Setting up Jenkins repository ---"
 wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
