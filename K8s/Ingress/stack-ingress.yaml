@@ -14,7 +14,7 @@ spec:
     - http:
         paths:
           # Prometheus UI
-          - path: /prometheus(/|$)(.*)
+          - path: /prometheus
             pathType: Prefix
             backend:
               service:
@@ -22,7 +22,7 @@ spec:
                 port:
                   number: 9090
           # Alertmanager UI
-          - path: /alertmanager(/|$)(.*)
+          - path: /alertmanager
             pathType: Prefix
             backend:
               service:
@@ -30,7 +30,7 @@ spec:
                 port:
                   number: 9093
           # Grafana UI
-          - path: /grafana(/|$)(.*)
+          - path: /grafana
             pathType: Prefix
             backend:
               service:
@@ -38,7 +38,7 @@ spec:
                 port:
                   number: 80 # Grafana service typically exposes on port 80
           # ArgoCD UI
-          - path: /argocd(/|$)(.*)
+          - path: /argocd
             pathType: Prefix
             backend:
               service:
@@ -46,10 +46,11 @@ spec:
                 port:
                   number: 80 # ArgoCD server typically exposes on port 80
           # Frontend application at root path
-          - path: /()(.*) # This regex matches the root path and captures everything after it
+          - path: /
             pathType: Prefix
             backend:
               service:
                 name: frontend-service  # Your frontend service name
                 port:
+
                   number: 80   # Port your frontend service exposes
