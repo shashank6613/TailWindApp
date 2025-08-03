@@ -31,9 +31,10 @@ pipeline {
                     withAWS(credentials: 'aws-creds', region: REGION) {
                         echo '🚀 Installing NGINX Ingress Controller...'
                         sh '''
-                            helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+                            helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx || true
                             helm repo update
-                            helm install ingress-nginx ingress-nginx/ingress-nginx \
+
+                            helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
                               --namespace ingress-nginx --create-namespace \
                               --set controller.service.type=LoadBalancer \
                               --set controller.publishService.enabled=true \
@@ -197,11 +198,15 @@ pipeline {
             echo '❌ Post-deployment setup failed. Check logs for details.'
             script {
                 echo '🧹 Cleaning up Docker images, k8 objects at all namespaces, secrets etc...'
-                sh "kubectl delete all --all --all-namespaces"
-                sh "kubectl delete secrets --all --all-namespaces"
+                sh ''' 
+                    kubectl delete all --all --all-namespaces
+                    helm uninstall ingress-nginx -n ingress-nginx || true
+                    kubectl delete secrets --all --all-namespaces
+                '''
             }
         }
     }
 }
+
 
 
