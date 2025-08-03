@@ -92,7 +92,7 @@ pipeline {
                                 helm install prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring --create-namespace \
                                     -f Prrometheus/prometheus-values.yaml \
-                                    --set ingress.enabled=false
+                                    --set ingress.enabled=false \
                                     --set installCRDs=true
                             fi
                         '''
@@ -197,11 +197,11 @@ pipeline {
             echo '❌ Post-deployment setup failed. Check logs for details.'
             script {
                 echo '🧹 Cleaning up Docker images, k8 objects at all namespaces, secrets etc...'
-                sh "sudo apt-get autoremove -y"
                 sh "kubectl delete all --all --all-namespaces"
                 sh "kubectl delete secrets --all --all-namespaces"
             }
         }
     }
 }
+
 
