@@ -10,7 +10,7 @@ sudo apt update -y
 sudo apt install -y openjdk-21-jre curl python3 gnupg2 software-properties-common apt-transport-https ca-certificates lsb-release
 
 echo "--- Setting up Jenkins repository ---"
-wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
 echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 sudo apt update -y
 sudo apt install -y jenkins
