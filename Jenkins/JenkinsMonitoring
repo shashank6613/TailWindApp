@@ -138,7 +138,7 @@ pipeline {
         stage('Capture Cluster Configurations') {
             steps {
                 script {
-                    def outputFile = '/home/ubuntu/cluster-configurations.txt'
+                    def outputFile = '/var/lib/jenkins/workspace/Installing-monitoring-stack/cluster-configurations.txt'
                     def timestamp = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
 
                     echo "📝 Capturing cluster configurations to ${outputFile}..."
@@ -207,6 +207,7 @@ pipeline {
         }
     }
 }
+
 
 
 
