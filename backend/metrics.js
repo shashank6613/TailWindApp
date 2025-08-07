@@ -61,7 +61,8 @@ const userRegistrationsTotal = new client.Counter({
 // Counter for application-level errors (e.g., database errors, unhandled exceptions in routes)
 const applicationErrorsTotal = new client.Counter({
     name: 'application_errors_total',
-    help: 'Total number of application errors encountered'
+    help: 'Total number of application errors encountered',
+    labelNames: ['type']
 });
 
 // Register custom business metrics
@@ -129,7 +130,7 @@ const updatePgDatabaseSize = async (pool, dbName) => {
     try {
         const result = await pool.query(`SELECT pg_database_size($1) AS db_size;`, [dbName]);
         const dbSize = result.rows[0].db_size;
-        pgDatabaseSizeBytes.set({ database_name: dbName }, dbSize);
+        pgDatabaseSizeBytes.set({ database_name: dbName }, Number(dbSize));
         // console.log(`Database size updated for ${dbName}: ${dbSize} bytes`);
     } catch (error) {
         console.error('Error updating PostgreSQL database size metric:', error);
@@ -147,3 +148,4 @@ module.exports = {
     initializePgPoolMetrics, // Function to set up pg pool metrics
     updatePgDatabaseSize, // Function to update database size metric
 };
+
