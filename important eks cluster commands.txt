@@ -13,3 +13,5 @@ sudo apt autoremove --purge -y         This removes leftover files from removed 
 kubectl logs <backend/frontend pod name> for frontend backend pods logs
 kubectl --namespace monitoring get secrets prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
    -  for grafana admin passwd
+kubectl get all --all-namespaces | grep -E 'frontend|backend|grafana|prometheus|argocd'
+   checking what is where
