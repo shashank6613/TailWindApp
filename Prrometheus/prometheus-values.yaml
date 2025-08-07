@@ -16,6 +16,9 @@ alertmanager:
 
 # Ensure Grafana is exposed via ClusterIP
 grafana:
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s/grafana"
   service:
     type: ClusterIP
   # Disable Ingress for the Grafana component directly
@@ -41,4 +44,5 @@ serviceMonitors:
     endpoints:
       - port: http # This should match the name of the port in your backend-service
         path: /metrics
+
         interval: 15s
