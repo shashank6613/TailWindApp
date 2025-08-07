@@ -4,7 +4,8 @@ metadata:
   name: monitoring-ingress
   namespace: monitoring # Ensure this matches where your monitoring stack is deployed
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
     # Add this annotation if you want to strip the prefix for ArgoCD as well
     # For ArgoCD, you might need specific base path configuration
     # nginx.ingress.kubernetes.io/app-root: /argocd # Sometimes useful for apps with absolute paths
@@ -14,7 +15,7 @@ spec:
     - http:
         paths:
           # Prometheus UI
-          - path: /prometheus
+          - path: /prometheus(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -22,7 +23,7 @@ spec:
                 port:
                   number: 9090
           # Alertmanager UI
-          - path: /alertmanager
+          - path: /alertmanager(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -30,7 +31,7 @@ spec:
                 port:
                   number: 9093
           # Grafana UI
-          - path: /grafana
+          - path: /grafana(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -38,7 +39,7 @@ spec:
                 port:
                   number: 80 # Grafana service typically exposes on port 80
           # ArgoCD UI
-          - path: /argocd
+          - path: /argocd(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -46,7 +47,7 @@ spec:
                 port:
                   number: 80 # ArgoCD server typically exposes on port 80
           # Frontend application at root path
-          - path: /
+          - path: /(/|$)(.*)
             pathType: Prefix
             backend:
               service:
@@ -54,4 +55,5 @@ spec:
                 port:
 
                   number: 80   # Port your frontend service exposes
+
 
