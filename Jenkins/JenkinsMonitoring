@@ -138,12 +138,14 @@ pipeline {
         stage('Capture Cluster Configurations') {
             steps {
                 script {
-                    echo "📝 Capturing cluster configurations using script..."
+                    echo "📝 Capturing cluster configurations and errors using script"
                     sh '''
                         # Run the script from the Scripts directory
                         sh Scripts/capture-configs.sh
+
+                        sh Scripts/collect-error.sh
                     '''
-                    echo "✅ Cluster configurations captured successfully."
+                    echo "✅ Cluster configurations and errors captured successfully."
                 }
             }
         }
@@ -184,6 +186,7 @@ pipeline {
         }
     }
 }
+
 
 
 
