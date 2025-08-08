@@ -138,34 +138,11 @@ pipeline {
         stage('Capture Cluster Configurations') {
             steps {
                 script {
-                    def outputFile = '/var/lib/jenkins/workspace/Installing-monitoring-stack/cluster-configurations.txt'
-                    def timestamp = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
-
-                    echo "📝 Capturing cluster configurations to ${outputFile}..."
-
-                    sh """
-                        echo "--- Cluster Configurations - ${timestamp} ---" >> ${outputFile}
-                        echo "Pods:" >> ${outputFile}
-                        kubectl get pods --all-namespaces >> ${outputFile} 2>&1
-                        echo "" >> ${outputFile}
-
-                        echo "Deployments:" >> ${outputFile}
-                        kubectl get deployments --all-namespaces >> ${outputFile} 2>&1
-                        echo "" >> ${outputFile}
-
-                        echo "Services:" >> ${outputFile}
-                        kubectl get services --all-namespaces >> ${outputFile} 2>&1
-                        echo "" >> ${outputFile}
-
-                        echo "ConfigMaps:" >> ${outputFile}
-                        kubectl get configmaps --all-namespaces >> ${outputFile} 2>&1
-                        echo "" >> ${outputFile}
-
-                        echo "Secrets:" >> ${outputFile}
-                        kubectl get secrets --all-namespaces >> ${outputFile} 2>&1
-                        echo "" >> ${outputFile}
-                        echo "--- End of Capture ---" >> ${outputFile}
-                    """
+                    echo "📝 Capturing cluster configurations using script..."
+                    sh '''
+                        # Run the script from the Scripts directory
+                        sh Scripts/capture-configs.sh
+                    '''
                     echo "✅ Cluster configurations captured successfully."
                 }
             }
@@ -207,6 +184,7 @@ pipeline {
         }
     }
 }
+
 
 
 
