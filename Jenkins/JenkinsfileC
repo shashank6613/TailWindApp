@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+
+    environment {
+        CLUSTER_NAME = 'app-clus'
+        REGION = 'us-west-2'
+    }
+
+    stages {
+        stage('Trigger Create-EKS-Cluster') {
+            steps {
+                script {
+                    echo "Triggering Create-EKS-Cluster job..."
+                    def result1 = build job: 'Create-EKS-Cluster',
+                        wait: true,
+                        parameters: [
+                            string(name: 'CLUSTER_NAME', value: CLUSTER_NAME),
+                            string(name: 'REGION', value: REGION)
+                        ]
+
+                    if (result1.result != 'SUCCESS') {
+                        error("❌ Create-EKS-Cluster job failed.")
+                    } else {
+                        echo "✅ Create-EKS-Cluster completed successfully."
+                    }
+                }
+            }
+        }
+
+        stage('Trigger Build-for-EKS-Cluster') {
+            steps {
+                script {
+                    echo "Triggering Build-for-EKS-Cluster job..."
+                    def result2 = build job: 'Build-for-EKS-Cluster',
+                        wait: true,
+                        parameters: [
+                            string(name: 'CLUSTER_NAME', value: CLUSTER_NAME),
+                            string(name: 'REGION', value: REGION)
+                        ]
+
+                    if (result2.result != 'SUCCESS') {
+                        error("❌ Build-for-EKS-Cluster job failed.")
+                    } else {
+                        echo "✅ Build-for-EKS-Cluster completed successfully."
+                    }
+                }
+            }
+        }
+
+        stage('Trigger Installing-monitoring-stack') {
+            steps {
+                script {
+                    echo "Triggering Installing-monitoring-stack job..."
+                    def result3 = build job: 'Installing-monitoring-stack',
+                        wait: true
+
+                    if (result3.result != 'SUCCESS') {
+                        error("❌ Installing-monitoring-stack job failed.")
+                    } else {
+                        echo "✅ Installing-monitoring-stack completed successfully."
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Controller pipeline completed successfully.'
+        }
+        failure {
+            echo '💥 Controller pipeline failed due to a job error.'
+        }
+    }
+}

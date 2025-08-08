@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSense - Information Collection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+        }
+        .page {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .page.active {
+            display: block;
+            opacity: 1;
+        }
+        .card {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+        }
+        .search-result {
+            transition: all 0.3s ease;
+        }
+        .search-result:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        select, input[type="text"], input[type="email"], input[type="tel"], textarea {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* card shadow */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px; /* Ensure table doesn't get too narrow */
+        }
+        th, td {
+            padding: 1rem; /* p-4 */
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0; /* border-gray-200 */
+        }
+        th {
+            background-color: #edf2f7; /* bg-gray-100 */
+            font-weight: 600; /* font-semibold */
+            color: #2d3748; /* text-gray-800 */
+            text-transform: uppercase;
+            font-size: 0.875rem; /* text-sm */
+        }
+        tbody tr:hover {
+            background-color: #f7fafc; /* bg-gray-50 equivalent */
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-white shadow-md py-4 px-6 fixed w-full top-0 z-10">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-800 ml-2">DataSense</h1>
+            </div>
+            <nav>
+                <ul class="flex space-x-6">
+                    <li><a href="#" class="text-blue-600 font-medium nav-link" data-page="home">Home</a></li>
+                    <li><a href="#" class="text-gray-600 hover:text-blue-600 font-medium nav-link" data-page="form">Information Form</a></li>
+                    <li><a href="#" class="text-gray-600 hover:text-blue-600 font-medium nav-link" data-page="search">Search Users</a></li>
+                    <li><a href="#" class="text-gray-600 hover:text-blue-600 font-medium nav-link" data-page="allUsers">All Users</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto pt-24 pb-12 px-4">
+        <div id="home" class="page active">
+            <section class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Welcome to DataSense</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">We value your privacy and want to be transparent about how we use your information.</p>
+            </section>
+
+            <section class="grid md:grid-cols-2 gap-12 mb-16">
+                <div class="card bg-white rounded-xl p-8">
+                    <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Why We Collect Information</h3>
+                    <p class="text-gray-600 mb-4">We collect your information to:</p>
+                    <ul class="text-gray-600 space-y-2 mb-6">
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            Personalize your experience with our services
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            Improve our products and services
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            Communicate with you about updates and offers
+                        </li>
+                        <li class="flex items-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            Ensure the security of our platform
+                        </li>
+                    </ul>
+                    <p class="text-gray-600">We are committed to protecting your data and will never sell it to third parties without your explicit consent.</p>
+                </div>
+
+                <div class="card bg-white rounded-xl p-8">
+                    <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">About DataSense</h3>
+                    <p class="text-gray-600 mb-4">Founded in 2015, DataSense is a leading provider of data-driven solutions that help businesses and individuals make better decisions.</p>
+                    <p class="text-gray-600 mb-4">Our mission is to empower our users with insights while maintaining the highest standards of data privacy and security.</p>
+                    <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-blue-800 mb-2">Our Values</h4>
+                        <ul class="text-blue-700 space-y-1">
+                            <li>✓ Transparency in all our operations</li>
+                            <li>✓ Respect for user privacy</li>
+                            <li>✓ Innovation in data solutions</li>
+                            <li>✓ Ethical data handling practices</li>
+                        </ul>
+                    </div>
+                    <p class="text-gray-600">With over 500,000 satisfied users worldwide, we continue to grow while staying true to our core principles.</p>
+                </div>
+            </section>
+
+            <div class="text-center">
+                <button class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg nav-link" data-page="form">
+                    Continue to Information Form
+                </button>
+            </div>
+        </div>
+
+        <div id="form" class="page">
+            <div class="max-w-3xl mx-auto">
+                <div class="card bg-white rounded-xl p-8 mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Your Information</h2>
+                    <p class="text-gray-600 mb-8">Please provide the following details. We value your privacy and will only use this information as described in our <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>.</p>
+
+                    <form id="userInfoForm" class="space-y-6" autocomplete="off">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="firstName" class="block text-gray-700 font-medium mb-2">First Name</label>
+                                <input type="text" id="firstName" name="firstName" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required autocomplete="off"  >
+                            </div>
+                            <div>
+                                <label for="lastName" class="block text-gray-700 font-medium mb-2">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required autocomplete="off" >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-gray-700 font-medium mb-2">Email Address</label>
+                            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" required autocomplete="off" >
+                        </div>
+
+                        <div>
+                            <label for="phone" class="block text-gray-700 font-medium mb-2">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off" >
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="organization" class="block text-gray-700 font-medium mb-2">Organization</label>
+                                <input type="text" id="organization" name="organization" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off" >
+                            </div>
+                            <div>
+                                <label for="orgType" class="block text-gray-700 font-medium mb-2">Organization Type</label>
+                                <select id="orgType" name="orgType" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select Organization Type</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Government">Government</option>
+                                    <option value="Healthcare">Healthcare</option>
+                                    <option value="IT">Information Technology</option>
+                                    <option value="Manufacturing">Manufacturing</option>
+                                    <option value="Non-profit">Non-profit</option>
+                                    <option value="Retail">Retail</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">Education</label>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="flex items-center">
+                                    <input type="radio" id="education1" name="education" value="Diploma" class="h-5 w-5 text-blue-600">
+                                    <label for="education1" class="ml-2 text-gray-700">Diploma</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="education2" name="education" value="Bachelors" class="h-5 w-5 text-blue-600">
+                                    <label for="education2" class="ml-2 text-gray-700">Bachelor's</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="education3" name="education" value="Masters" class="h-5 w-5 text-blue-600">
+                                    <label for="education3" class="ml-2 text-gray-700">Master's</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="homeLocation" class="block text-gray-700 font-medium mb-2">Home Location</label>
+                            <input type="text" id="homeLocation" name="homeLocation" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off" >
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="state" class="block text-gray-700 font-medium mb-2">State</label>
+                                <select id="state" name="state" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select State</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="city" class="block text-gray-700 font-medium mb-2">City</label>
+                                <select id="city" name="city" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select City</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">How did you hear about us?</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="flex items-center">
+                                    <input type="radio" id="source1" name="source" value="Social Media" class="h-5 w-5 text-blue-600">
+                                    <label for="source1" class="ml-2 text-gray-700">Social Media</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="source2" name="source" value="Search Engine" class="h-5 w-5 text-blue-600">
+                                    <label for="source2" class="ml-2 text-gray-700">Search Engine</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="source3" name="source" value="Friend" class="h-5 w-5 text-blue-600">
+                                    <label for="source3" class="ml-2 text-gray-700">Friend</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="radio" id="source4" name="source" value="Other" class="h-5 w-5 text-blue-600">
+                                    <label for="source4" class="ml-2 text-gray-700">Other</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <input type="checkbox" id="consent" name="consent" class="h-5 w-5 text-blue-600 mt-1" required>
+                            <label for="consent" class="ml-2 text-gray-700">I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>.</label>
+                        </div>
+
+                        <div class="flex items-start">
+                            <input type="checkbox" id="newsletter" name="newsletter" class="h-5 w-5 text-blue-600 mt-1">
+                            <label for="newsletter" class="ml-2 text-gray-700">I would like to receive newsletters and updates about products and services.</label>
+                        </div>
+
+                        <div class="text-center pt-4">
+                            <button type="submit" class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg">
+                                Submit Information
+                            </button>
+                        </div>
+                    </form>
+
+                    <div id="submissionSuccess" class="text-center py-8 hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-4">Thank You!</h2>
+                        <p class="text-xl text-gray-600 mb-6">Your information has been successfully submitted.</p>
+                        <p class="text-gray-600 mb-8">We'll be in touch with you shortly.</p>
+                        <div class="flex flex-wrap justify-center gap-4">
+                            <button class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg nav-link" data-page="home">
+                                Return to Home
+                            </button>
+                            <button class="btn-primary bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full text-lg nav-link" data-page="search">
+                                Search Users
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="search" class="page">
+            <div class="max-w-4xl mx-auto">
+                <div class="card bg-white rounded-xl p-8 mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Search Users</h2>
+                    <p class="text-gray-600 mb-8">Find registered users by name, email, organization, or other information.</p>
+
+                    <form id="searchForm" class="mb-8">
+                        <div class="flex flex-col md:flex-row gap-4 mb-4">
+                            <div class="flex-grow">
+                                <input type="text" id="searchQuery" name="searchQuery" placeholder="Enter name, email, or other information..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off" >
+                            </div>
+                            <div>
+                                <select id="searchType" name="searchType" class="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="all">All Fields</option>
+                                    <option value="name">Name</option>
+                                    <option value="email">Email</option>
+                                    <option value="phone">Phone</option>
+                                    <option value="organization">Organization</option>
+                                    <option value="education">Education</option>
+                                    <option value="location">Location</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+                                    <div class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        Search
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center">
+                            <button type="button" id="advancedSearchToggle" class="text-blue-600 hover:text-blue-800 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Advanced Search
+                            </button>
+                        </div>
+
+                        <div id="advancedSearchOptions" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="searchState" class="block text-gray-700 font-medium mb-2">State</label>
+                                    <select id="searchState" name="searchState" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Any State</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="searchEducation" class="block text-gray-700 font-medium mb-2">Education</label>
+                                    <select id="searchEducation" name="searchEducation" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Any Education</option>
+                                        <option value="Diploma">Diploma</option>
+                                        <option value="Bachelors">Bachelor's</option>
+                                        <option value="Masters">Master's</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="searchOrgType" class="block text-gray-700 font-medium mb-2">Organization Type</label>
+                                    <select id="searchOrgType" name="searchOrgType" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Any Organization Type</option>
+                                        <option value="Education">Education</option>
+                                        <option value="Government">Government</option>
+                                        <option value="Healthcare">Healthcare</option>
+                                        <option value="IT">Information Technology</option>
+                                        <option value="Manufacturing">Manufacturing</option>
+                                        <option value="Non-profit">Non-profit</option>
+                                        <option value="Retail">Retail</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="searchNewsletter" class="block text-gray-700 font-medium mb-2">Newsletter Subscription</label>
+                                    <select id="searchNewsletter" name="searchNewsletter" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="">Any Status</option>
+                                        <option value="true">Subscribed</option>
+                                        <option value="false">Not Subscribed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="searchResults" class="space-y-4">
+                        <div class="text-center text-gray-500 py-8">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <p class="text-lg">Enter a search query to find users</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="allUsers" class="page">
+            <div class="max-w-6xl mx-auto">
+                <div class="card bg-white rounded-xl p-8 mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">All Registered Users</h2>
+                    <p class="text-gray-600 mb-8">View all submitted user information or filter by specific criteria.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                        <div>
+                            <label for="filterState" class="block text-gray-700 font-medium mb-2">Filter by State</label>
+                            <select id="filterState" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All States</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterCity" class="block text-gray-700 font-medium mb-2">Filter by City</label>
+                            <select id="filterCity" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All Cities</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterEducation" class="block text-gray-700 font-medium mb-2">Filter by Education</label>
+                            <select id="filterEducation" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All Education Levels</option>
+                                <option value="Diploma">Diploma</option>
+                                <option value="Bachelors">Bachelor's</option>
+                                <option value="Masters">Master's</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterOrgType" class="block text-gray-700 font-medium mb-2">Filter by Organization Type</label>
+                            <select id="filterOrgType" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All Org Types</option>
+                                <option value="Education">Education</option>
+                                <option value="Government">Government</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="IT">Information Technology</option>
+                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Non-profit">Non-profit</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filterSource" class="block text-gray-700 font-medium mb-2">Filter by How Heard</label>
+                            <select id="filterSource" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">All Sources</option>
+                                <option value="Social Media">Social Media</option>
+                                <option value="Search Engine">Search Engine</option>
+                                <option value="Friend">Friend</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="applyFiltersBtn" class="btn-primary bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg w-full">
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="allUsersTableContainer" class="table-container bg-white">
+                        <div class="text-center text-gray-500 py-8">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            <p class="text-lg">Select filters and click 'Apply Filters' to view user data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8 px-4">
+        <div class="container mx-auto">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">DataSense</h3>
+                    <p class="text-gray-300">Making data work for you while respecting your privacy.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white">Home</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">About Us</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Contact Us</h3>
+                    <p class="text-gray-300">123 Data Street<br>Analytics City, AC 12345<br>contact@datasense.example</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2023 DataSense. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

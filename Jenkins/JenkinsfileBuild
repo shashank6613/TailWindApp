@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+
+    environment {
+        FRONTEND_IMAGE_NAME        = 'shashank9928/linkproj-fe'
+        BACKEND_IMAGE_NAME         = 'shashank9928/linkproj-be'
+        DOCKER_CREDENTIALS_ID      = 'dock-creds'
+        FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/frontend-deployment.yaml'
+        BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/backend-deployment.yaml'
+        FRONTEND_DIR               = 'frontend'
+        BACKEND_DIR                = 'backend'
+        CLUSTER_NAME               = 'app-clus'
+        REGION                     = 'us-west-2'
+    }
+
+    stages {
+        stage('Wait for EKS Cluster Readiness') {
+            steps {
+                script {
+                    echo "🔍 Checking if EKS cluster '${CLUSTER_NAME}' is ACTIVE..."
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitUntil {
+                                def status = sh(
+                                    script: "aws eks describe-cluster --name ${CLUSTER_NAME} --region ${REGION} --query 'cluster.status' --output text",
+                                    returnStdout: true
+                                ).trim()
+                                echo "EKS Cluster status: ${status}"
+                                return status == 'ACTIVE'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Checkout Source') {
+            steps { checkout scm }
+        }
+        stage('Install Node.js and npm') {
+            steps {
+                script {
+                    if (sh(script: 'npm -v', returnStatus: true) != 0) {
+                        sh '''
+                            curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+                            sudo apt-get install -y nodejs
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Build Backend') {
+            steps {
+                dir(BACKEND_DIR) {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Build & Push Docker Images') {
+            steps {
+                script {
+                    def buildId = BUILD_NUMBER
+                    docker.build("${FRONTEND_IMAGE_NAME}:${buildId}", "-f ${FRONTEND_DIR}/Dockerfile ./${FRONTEND_DIR}")
+                    docker.build("${BACKEND_IMAGE_NAME}:${buildId}", "-f ${BACKEND_DIR}/Dockerfile ./${BACKEND_DIR}")
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
+                        docker.image("${FRONTEND_IMAGE_NAME}:${buildId}").push()
+                        docker.image("${BACKEND_IMAGE_NAME}:${buildId}").push()
+                    }
+                }
+            }
+        }
+
+        stage('Update Kubernetes Deployment Manifests') {
+            steps {
+                script {
+                    def buildId = BUILD_NUMBER
+                    def feImg = "${FRONTEND_IMAGE_NAME}:${buildId}"
+                    def beImg = "${BACKEND_IMAGE_NAME}:${buildId}"
+
+                    withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh """
+                            echo "🛠 Updating image tags in deployment YAMLs..."
+                            sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
+                            sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
+
+                            echo "🔧 Configuring Git..."
+                            git config user.email 'jenkins@mail.com'
+                            git config user.name 'Jenkins CI'
+
+                            echo "📦 Staging files..."
+                            git add ${FRONTEND_DEPLOYMENT_FILE} ${BACKEND_DEPLOYMENT_FILE}
+
+                            echo "📝 Committing (even if no changes)..."
+                            git commit --allow-empty -m 'Update image tags to build ${buildId}' || true
+
+                            echo "🔐 Updating remote URL with credentials safely..."
+                            git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git
+
+                            echo "🚀 Pushing changes..."
+                            git push origin HEAD:main
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully.'
+        }
+        failure {
+            echo '❌ Pipeline failed. Cleaning up Docker images...'
+            script {
+                def id = BUILD_NUMBER
+                sh "docker rmi ${FRONTEND_IMAGE_NAME}:${id} || true"
+                sh "docker rmi ${BACKEND_IMAGE_NAME}:${id} || true"
+                sh "sudo apt-get purge nodejs libnode72 -y"
+                sh "sudo apt-get autoremove -y"
+                sh "sudo apt-get update"
+            }
+        }
+    }
+}

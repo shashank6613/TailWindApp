@@ -1,0 +1,210 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_CREDENTIALS_ID = 'aws-creds'
+        CLUSTER_NAME = 'app-clus'
+        REGION = 'us-west-2'
+    }
+
+    stages {
+        stage('Configure AWS CLI') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
+                        echo "⚙️ Configuring AWS CLI using Jenkins credentials..."
+                        sh """
+                            # Configure AWS CLI using credentials from Jenkins
+                            # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are automatically set by withCredentials block
+                            aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID
+                            aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY
+                            aws configure set default.region ${REGION}
+                            echo "✅ AWS CLI configured."
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Check for Existing EKS Cluster') {
+            steps {
+                script {
+                    echo "🔍 Checking if EKS cluster '${CLUSTER_NAME}' already exists..."
+                    withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${REGION}") {
+                        def clusterStatus = sh(
+                            script: """
+                                aws eks describe-cluster \
+                                    --name ${CLUSTER_NAME} \
+                                    --region ${REGION} \
+                                    --query 'cluster.status' \
+                                    --output text || echo "NOTFOUND"
+                            """,
+                            returnStdout: true
+                        ).trim()
+
+                        if (clusterStatus == "ACTIVE" || clusterStatus == "CREATING") {
+                            echo "✅ Cluster '${CLUSTER_NAME}' already exists with status: ${clusterStatus}"
+                            currentBuild.result = 'SUCCESS'
+                            return
+                        } else {
+                            echo "🚀 Cluster not found. Proceeding to creation..."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Create EKS Cluster') {
+            when {
+                expression {
+                    currentBuild.result != 'SUCCESS'
+                }
+            }
+            steps {
+                script {
+                    withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${REGION}") {
+                        echo "🚀 Creating new EKS cluster..."
+                        sh """
+                            set -e
+                            eksctl create cluster \
+                                --name ${CLUSTER_NAME} \
+                                --version 1.32 \
+                                --region ${REGION} \
+                                --nodegroup-name stand-work \
+                                --node-type t3.medium \
+                                --nodes 2 \
+                                --nodes-min 2 \
+                                --nodes-max 3 \
+                                --managed
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Update kubeconfig') {
+            steps {
+                script {
+                    echo "🔄 Updating kubeconfig for EKS cluster '${CLUSTER_NAME}'..."
+                    withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${REGION}") {
+                        sh """
+                            aws eks update-kubeconfig \\
+                            --name ${CLUSTER_NAME} \\
+                            --region ${REGION} \\
+                            --alias ${CLUSTER_NAME}
+                        """
+                        echo '✅ kubeconfig updated successfully.'
+
+                        echo '✅ Varifying connectivity.'
+
+                        sh "kubectl get nodes"
+                    }
+                }
+            }
+        }
+
+        stage('Wait for Node Readiness') {
+            steps {
+                script {
+                    withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${REGION}") {
+                    echo "⏳ Waiting for EKS nodes to become ready..."
+                        timeout(time: 10, unit: 'MINUTES') {
+                            waitUntil {
+                                def readyNodes = sh(
+                                    script: "kubectl get nodes --no-headers | grep 'Ready' | wc -l",
+                                    returnStdout: true
+                                ).trim().toInteger()
+                                echo "Nodes Ready: ${readyNodes}"
+                                return readyNodes > 0
+                            }
+                        }
+                    }
+              
+                    echo "✅ EKS nodes are ready."
+                }
+            }
+        }
+
+        stage('Install ArgoCD') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "🚀 Installing ArgoCD using Helm..."
+                        sh """
+                            # Check if namespace 'argocd' exists
+                            if ! kubectl get namespace argocd >/dev/null 2>&1; then
+                                echo "📦 Creating 'argocd' namespace..."
+                                kubectl create namespace argocd
+                            else
+                                echo "✅ Namespace 'argocd' already exists. Skipping creation."
+                            fi
+
+                            # Add and update ArgoCD Helm repo
+                            helm repo add argo https://argoproj.github.io/argo-helm || true
+                            helm repo update
+
+                            # Check if ArgoCD is already installed
+                            if helm status argocd -n argocd >/dev/null 2>&1; then
+                                echo "✅ ArgoCD is already installed in namespace 'argocd'. Skipping Helm install."
+                            else
+                               echo "🚀 Installing ArgoCD with Helm..."
+                                helm install argocd argo/argo-cd \\
+                                    --namespace argocd \\
+                                    --set server.service.type=ClusterIP \\
+                                    --set installCRDs=true
+                            fi
+                        """
+                    }
+                }
+            }
+        }
+        stage('Apply ArgoCD Application File') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "checking for argocd CRD"
+                        sh '''
+                            if ! kubectl get crd applications.argoproj.io > /dev/null 2>&1; then
+                            echo "❌ ArgoCD CRD missing!"
+                            exit 1
+                            fi
+                        '''
+                        echo "🚀 Applying ArgoCD Application manifest..."
+                        sh '''
+                            # Apply the Application manifest to ArgoCD
+                            kubectl apply -f ArgoCD-config/argo-app.yaml -n argocd --validate=false
+                        '''
+                        echo "✅ ArgoCD Application has been applied."
+                    }
+                }
+            }
+        }
+
+        stage('Create Kubernetes DB Secret') {
+            steps {
+                withCredentials([file(credentialsId: 'db-secrets-file', variable: 'DB_SECRETS_FILE')]) {
+                    script {
+                        withAWS(credentials: 'aws-creds', region: REGION) {
+                            echo "🔐 Creating Kubernetes secret for database credentials..."
+                            sh """
+                                kubectl create secret generic db-credentials \
+                                  --from-env-file=${DB_SECRETS_FILE} \
+                                  -n default --dry-run=client -o yaml | kubectl apply -f -
+                            """
+                        }
+                    }
+               }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ EKS cluster creation, ArgoCD installation, and application deployment completed (or already existed).'
+        }
+        failure {
+            echo '❌ EKS cluster creation or ArgoCD installation job failed.'
+        }
+    }
+}
+
