@@ -6,9 +6,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
-    # Add this annotation if you want to strip the prefix for ArgoCD as well
-    # For ArgoCD, you might need specific base path configuration
-    # nginx.ingress.kubernetes.io/app-root: /argocd # Sometimes useful for apps with absolute paths
+    
 spec:
   ingressClassName: nginx
   rules:
@@ -38,22 +36,5 @@ spec:
                 name: prometheus-grafana # CORRECT service name
                 port:
                   number: 80 # Grafana service typically exposes on port 80
-          # ArgoCD UI
-          - path: /argocd(/|$)(.*)
-            pathType: Prefix
-            backend:
-              service:
-                name: argocd-server # CORRECT service name
-                port:
-                  number: 80 # ArgoCD server typically exposes on port 80
-          # Frontend application at root path
-          - path: /(/|$)(.*)
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend-service  # Your frontend service name
-                port:
-
-                  number: 80   # Port your frontend service exposes
 
 
