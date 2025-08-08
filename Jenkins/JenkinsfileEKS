@@ -63,19 +63,10 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: "${AWS_CREDENTIALS_ID}", region: "${REGION}") {
-                        echo "🚀 Creating new EKS cluster..."
+                        echo "🚀 Creating new EKS cluster from configuration file..."
                         sh """
                             set -e
-                            eksctl create cluster \
-                                --name ${CLUSTER_NAME} \
-                                --version 1.32 \
-                                --region ${REGION} \
-                                --nodegroup-name stand-work \
-                                --node-type t3.medium \
-                                --nodes 2 \
-                                --nodes-min 2 \
-                                --nodes-max 3 \
-                                --managed
+                            eksctl create cluster -f Scripts/cluster-config.yaml
                         """
                     }
                 }
@@ -222,6 +213,7 @@ pipeline {
         }
     }
 }
+
 
 
 
