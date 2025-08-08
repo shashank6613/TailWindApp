@@ -158,6 +158,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy ArgoCD Ingress') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
+                        echo '🚀 Deploying argocd-ingress.yaml...'
+                        sh 'kubectl apply -f K8s/Ingress/argocd-ingress.yaml'
+                    }
+                }
+            }
+        }
+
         stage('Apply ArgoCD Application File') {
             steps {
                 script {
@@ -207,4 +219,5 @@ pipeline {
         }
     }
 }
+
 
