@@ -1,0 +1,22 @@
+# This ArgoCD Application will manage your application's ingress resource.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app-ingress
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/shashank6613/TailWindApp.git
+    targetRevision: master
+    path: K8s/Ingress/  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
