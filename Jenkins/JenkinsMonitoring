@@ -160,7 +160,7 @@ pipeline {
                             git config user.name "Jenkins CI"
                             git add Prrometheus/prometheus-values.yaml
                             git commit -m "Update external IP to ${EXTERNAL_IP} in ingress files [ci skip]" || echo "No changes to commit"
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git HEAD:main
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git HEAD:master
                         '''
                         echo "✅ Changes pushed to repo."
                     }
@@ -186,6 +186,7 @@ pipeline {
         }
     }
 }
+
 
 
 
