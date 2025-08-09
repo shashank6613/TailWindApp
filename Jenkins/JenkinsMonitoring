@@ -17,9 +17,24 @@ pipeline {
                         echo "🔄 Updating kubeconfig for EKS cluster '${CLUSTER_NAME}'..."
                         sh """
                             aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION} --alias ${CLUSTER_NAME}
-                            kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.19.5/config/master/aws-k8s-cni.yaml
+                            kubectl config use-context ${CLUSTER_NAME}
                             kubectl get nodes --context=${CLUSTER_NAME}
                         """
+                    }
+                }
+            }
+        }
+
+        stage('Patch CNI Plugin (Conditional)') {
+            steps {
+                script {
+                    echo "🔍 Checking CNI version..."
+                    def currentCNI = sh(script: "kubectl describe daemonset aws-node -n kube-system | grep Image | head -n1", returnStdout: true).trim()
+                    if (!currentCNI.contains("v1.19.5")) {
+                        echo "⚙️ Patching CNI to v1.19.5"
+                        sh "kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.19.5/config/master/aws-k8s-cni.yaml"
+                    } else {
+                        echo "✅ CNI already at desired version."
                     }
                 }
             }
@@ -141,9 +156,9 @@ pipeline {
                     echo "📝 Capturing cluster configurations and errors using script"
                     sh '''
                         # Run the script from the Scripts directory
-                        sh Scripts/capture-configs.sh
+                        bash Scripts/capture-configs.sh
 
-                        sh Scripts/collect-error.sh
+                        bash Scripts/collect-error.sh
                     '''
                     echo "✅ Cluster configurations and errors captured successfully."
                 }
@@ -187,14 +202,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
