@@ -1,1 +1,88 @@
-fro 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-visualizer-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: k8s-visualizer-cr
+rules:
+- apiGroups: ["", "apps", "extensions", "networking.k8s.io"]
+  resources: ["pods", "services", "deployments", "ingresses", "namespaces"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-visualizer-crb
+subjects:
+- kind: ServiceAccount
+  name: k8s-visualizer-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: k8s-visualizer-cr
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-visualizer-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-visualizer
+  template:
+    metadata:
+      labels:
+        app: k8s-visualizer
+    spec:
+      serviceAccountName: k8s-visualizer-sa
+      containers:
+      - name: web-server
+        # Use your Docker Hub repository
+        image: shashank9928/k8s-visualizer:latest
+        ports:
+        - containerPort: 80
+      - name: k8s-proxy
+        image: bitnami/kubectl:latest
+        command: ["/bin/sh"]
+        args: ["-c", "kubectl proxy --port=8081 --address='0.0.0.0'"]
+        ports:
+        - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-visualizer-service
+  namespace: default
+spec:
+  selector:
+    app: k8s-visualizer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: k8s-visualizer-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /visualizer
+        pathType: Prefix
+        backend:
+          service:
+            name: k8s-visualizer-service
+            port:
+              number: 80
