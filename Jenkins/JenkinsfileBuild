@@ -10,6 +10,7 @@ pipeline {
         
         FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/frontend-deployment.yaml'
         BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/backend-deployment.yaml'
+        VISUAL_DEPLOYMENT_FILE     = 'K8s/manifests/visualizer-manifest.yaml'
 
         FRONTEND_DIR               = 'frontend'
         BACKEND_DIR                = 'backend'
@@ -93,7 +94,7 @@ pipeline {
                             echo "🛠 Updating image tags in deployment YAMLs..."
                             sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
                             sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
-                            sed -i 's|image: .*shashank9928/k8s-visualizer:.*|image: ${visImg}|' ${BACKEND_DEPLOYMENT_FILE}
+                            sed -i 's|image: .*k8s-visualizer:.*|image: ${visImg}|' ${VISUAL_DEPLOYMENT_FILE}
 
 
                             echo "🔧 Configuring Git..."
@@ -101,7 +102,7 @@ pipeline {
                             git config user.name 'Jenkins CI'
 
                             echo "📦 Staging files..."
-                            git add ${FRONTEND_DEPLOYMENT_FILE} ${BACKEND_DEPLOYMENT_FILE}
+                            git add ${FRONTEND_DEPLOYMENT_FILE} ${BACKEND_DEPLOYMENT_FILE} ${VISUAL_DEPLOYMENT_FILE}
 
                             echo "📝 Committing (even if no changes)..."
                             git commit --allow-empty -m 'Update image tags to build ${buildId}' || true
@@ -128,6 +129,7 @@ pipeline {
                 def id = BUILD_NUMBER
                 sh "docker rmi ${FRONTEND_IMAGE_NAME}:${id} || true"
                 sh "docker rmi ${BACKEND_IMAGE_NAME}:${id} || true"
+                sh "docker rmi ${VISUALIZER_IMAGE_NAME}:${id} || true"
                 sh "sudo apt-get purge nodejs libnode72 -y"
                 sh "sudo apt-get autoremove -y"
                 sh "sudo apt-get update"
@@ -135,5 +137,6 @@ pipeline {
         }
     }
 }
+
 
 
