@@ -73,6 +73,26 @@ pipeline {
             }
         }
 
+        stage('Create IAM Identity Mapping') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
+                        echo "⚙️ Creating IAM identity mapping for the EKS cluster..."
+                        sh """
+                            eksctl create iamidentitymapping \
+                                --cluster app-clus \
+                                --region us-west-2 \
+                                --arn arn:aws:iam::799344209838:role/Project-Role-K8 \
+                                --username ubuntu \
+                                --group system:masters
+                    
+                            echo "✅ IAM identity mapping created."
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Update kubeconfig') {
             steps {
                 script {
@@ -213,6 +233,7 @@ pipeline {
         }
     }
 }
+
 
 
 
