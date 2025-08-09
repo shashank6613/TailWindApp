@@ -15,9 +15,3 @@ managedNodeGroups:
 
 iam:
   withOIDC: true
-
-identityMappings:
-  - arn: arn:aws:iam::799344209838:role/Project-Role-K8
-    username: ubuntu
-    groups:
-      - system:masters
