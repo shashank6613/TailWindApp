@@ -2,13 +2,19 @@ pipeline {
     agent any
 
     environment {
+        DOCKER_CREDENTIALS_ID      = 'dock-creds'
+        
         FRONTEND_IMAGE_NAME        = 'shashank9928/linkproj-fe'
         BACKEND_IMAGE_NAME         = 'shashank9928/linkproj-be'
-        DOCKER_CREDENTIALS_ID      = 'dock-creds'
+        VISUALIZER_IMAGE_NAME      = 'shashank9928/k8s-visualizer'
+        
         FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/frontend-deployment.yaml'
         BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/backend-deployment.yaml'
+
         FRONTEND_DIR               = 'frontend'
         BACKEND_DIR                = 'backend'
+        VISUALIZER_DIR = "K8s/manifests/visualizer"
+
         CLUSTER_NAME               = 'app-clus'
         REGION                     = 'us-west-2'
     }
@@ -64,9 +70,11 @@ pipeline {
                     def buildId = BUILD_NUMBER
                     docker.build("${FRONTEND_IMAGE_NAME}:${buildId}", "-f ${FRONTEND_DIR}/Dockerfile ./${FRONTEND_DIR}")
                     docker.build("${BACKEND_IMAGE_NAME}:${buildId}", "-f ${BACKEND_DIR}/Dockerfile ./${BACKEND_DIR}")
+                    docker.build("${VISUALIZER_IMAGE_NAME}:${buildId}", "-f ${VISUALIZER_DIR}/Dockerfile ./${VISUALIZER_DIR}")
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
                         docker.image("${FRONTEND_IMAGE_NAME}:${buildId}").push()
                         docker.image("${BACKEND_IMAGE_NAME}:${buildId}").push()
+                        docker.image("${VISUALIZER_IMAGE_NAME}:${buildId}").push()
                     }
                 }
             }
@@ -78,12 +86,15 @@ pipeline {
                     def buildId = BUILD_NUMBER
                     def feImg = "${FRONTEND_IMAGE_NAME}:${buildId}"
                     def beImg = "${BACKEND_IMAGE_NAME}:${buildId}"
+                    def visImg = "${VISUALIZER_IMAGE_NAME}:${buildId}"
 
                     withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """
                             echo "🛠 Updating image tags in deployment YAMLs..."
                             sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
                             sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
+                            sed -i 's|image: .*shashank9928/k8s-visualizer:.*|image: ${visImg}|' ${BACKEND_DEPLOYMENT_FILE}
+
 
                             echo "🔧 Configuring Git..."
                             git config user.email 'jenkins@mail.com'
@@ -124,4 +135,5 @@ pipeline {
         }
     }
 }
+
 
