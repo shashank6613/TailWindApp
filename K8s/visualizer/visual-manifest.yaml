@@ -67,22 +67,3 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: k8s-visualizer-ingress
-  namespace: default
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /visualizer
-        pathType: Prefix
-        backend:
-          service:
-            name: k8s-visualizer-service
-            port:
-              number: 80
