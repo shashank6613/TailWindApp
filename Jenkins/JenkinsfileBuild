@@ -6,15 +6,15 @@ pipeline {
         
         FRONTEND_IMAGE_NAME        = 'shashank9928/linkproj-fe'
         BACKEND_IMAGE_NAME         = 'shashank9928/linkproj-be'
-        VISUALIZER_IMAGE_NAME      = 'shashank9928/k8s-visualizer'
+        VISUALIZER_IMAGE_NAME      = 'shashank9928/visual-img'
         
-        FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/frontend-deployment.yaml'
-        BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/backend-deployment.yaml'
-        VISUAL_DEPLOYMENT_FILE     = 'K8s/manifests/visualizer-manifest.yaml'
+        FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/app/frontend-deployment.yaml'
+        BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/app/backend-deployment.yaml'
+        VISUAL_DEPLOYMENT_FILE     = 'K8s/manifests/visual/visual-manifest.yaml'
 
         FRONTEND_DIR               = 'frontend'
         BACKEND_DIR                = 'backend'
-        VISUALIZER_DIR = "K8s/manifests/visualizer"
+        VISUALIZER_DIR             = "Visualizer"
 
         CLUSTER_NAME               = 'app-clus'
         REGION                     = 'us-west-2'
@@ -87,7 +87,7 @@ pipeline {
                             echo "🛠 Updating image tags in deployment YAMLs..."
                             sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
                             sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
-                            sed -i 's|image: .*k8s-visualizer:.*|image: ${visImg}|' ${VISUAL_DEPLOYMENT_FILE}
+                            sed -i 's|image: .*visual-img:.*|image: ${visImg}|' ${VISUAL_DEPLOYMENT_FILE}
 
 
                             echo "🔧 Configuring Git..."
@@ -130,6 +130,7 @@ pipeline {
         }
     }
 }
+
 
 
 
