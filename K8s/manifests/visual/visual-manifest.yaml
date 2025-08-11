@@ -31,21 +31,21 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: visual-img-deployment
+  name: visual-deployment
   labels:
-    app: visual-img
+    app: visualizer
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: visual-img
+      app: visualizer
   template:
     metadata:
       labels:
-        app: visual-img
+        app: visualizer
     spec:
       containers:
-      - name: visual-img
+      - name: visualizer-contain
         image: shashank9928/visual-img:latest # Jenkins will update this tag
         ports:
         - containerPort: 80
@@ -53,10 +53,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: visual-img-service
+  name: visual-service
 spec:
   selector:
-    app: visual-img
+    app: visualizer
   type: LoadBalancer
   ports:
     - protocol: TCP
