@@ -129,7 +129,7 @@ pipeline {
                         }
                         echo '✅ Grafana running.'
                         echo '🚀 Applying unified Ingress...'
-                        sh 'kubectl apply -f K8s/Ingress/monitoring-ingress.yaml'
+                        sh 'kubectl apply -f K8s/Ingress/monitoring/monitoring-ingress.yaml'
                     }
                 }
             }
@@ -202,3 +202,4 @@ pipeline {
         }
     }
 }
+
