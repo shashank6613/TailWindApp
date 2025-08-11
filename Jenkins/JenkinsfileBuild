@@ -44,6 +44,7 @@ pipeline {
         stage('Checkout Source') {
             steps { checkout scm }
         }
+
         stage('Install Node.js and npm') {
             steps {
                 script {
@@ -53,14 +54,6 @@ pipeline {
                             sudo apt-get install -y nodejs
                         '''
                     }
-                }
-            }
-        }
-
-        stage('Build Backend') {
-            steps {
-                dir(BACKEND_DIR) {
-                    sh 'npm install'
                 }
             }
         }
@@ -137,6 +130,7 @@ pipeline {
         }
     }
 }
+
 
 
 
