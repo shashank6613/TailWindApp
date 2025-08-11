@@ -175,7 +175,7 @@ pipeline {
                 script {
                     withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
                         echo '🚀 Deploying argocd-ingress.yaml...'
-                        sh 'kubectl apply -f K8s/Ingress/argocd-ingress.yaml'
+                        sh 'kubectl apply -f K8s/Ingress/argo/argocd-ingress.yaml'
                     }
                 }
             }
@@ -194,11 +194,14 @@ pipeline {
                         '''
                         echo "🚀 Applying ArgoCD Application manifest..."
                         sh '''
-                            # Apply the ArgoCD Application manifest for your deployments
+                            # Apply the ArgoCD Application manifest for your application deployments
                             kubectl apply -f ArgoCD-config/argo-app-main.yaml -n argocd --validate=false
                     
                             # Apply the ArgoCD Application manifest for your application's ingress
                             kubectl apply -f ArgoCD-config/argo-app-ingress.yaml -n argocd --validate=false
+
+                            # Apply the ArgoCD Application manifest for visualizer app manifest
+                            kubectl apply -f ArgoCD-config/visualizer-app.yaml -n argocd --validate=false
                         '''
                         echo "✅ ArgoCD Application has been applied."
                     }
@@ -233,6 +236,7 @@ pipeline {
         }
     }
 }
+
 
 
 
