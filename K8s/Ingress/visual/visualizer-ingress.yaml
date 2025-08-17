@@ -13,6 +13,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: visualservice
+            name: visual-service
             port:
               number: 80
