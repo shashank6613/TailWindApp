@@ -7,7 +7,7 @@ set -e
 # and saves it to a file for review.
 
 # Define the output file path.
-outputFile="/var/lib/jenkins/workspace/${JOB_NAME:-default-pipeline}"/cluster-configurations.txt"
+outputFile="/var/lib/jenkins/workspace/${JOB_NAME:-default-pipeline}/cluster-configurations.txt"
 timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 
 echo "📝 Capturing cluster configurations to ${outputFile}..."
