@@ -46,7 +46,7 @@ spec:
     spec:
       containers:
       - name: visualizer-contain
-        image: shashank9928/visual-img:latest # Jenkins will update this tag
+        image: shashank9928/visual-img:9
         ports:
         - containerPort: 80
 ---
