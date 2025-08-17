@@ -4,15 +4,15 @@ metadata:
   name: default-ingress
   namespace: default # This Ingress only manages services in this namespace
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
           # Frontend application at root path
-          - path: /(/|$)(.*)
+          - path: /
             pathType: Prefix
             backend:
               service:
@@ -20,7 +20,7 @@ spec:
                 port:
                   number: 80
           # Backend API
-          - path: /api(/|$)(.*)
+          - path: /api
             pathType: Prefix
             backend:
               service:
