@@ -57,7 +57,7 @@ metadata:
 spec:
   selector:
     app: visualizer
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - protocol: TCP
       port: 80
