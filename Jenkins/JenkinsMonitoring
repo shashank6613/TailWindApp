@@ -193,15 +193,19 @@ pipeline {
             script {
                 echo '🧹 Cleaning up Docker images, k8 objects at all namespaces, secrets etc...'
                 sh ''' 
-                    kubectl delete all --all --all-namespaces
+                    kubectl delete deployments,services,pods,ingress -n default --ignore-not-found=true
+                    kubectl delete deployments,services,pods,ingress -n monitoring --ignore-not-found=true
+                    kubectl delete deployments,services,pods,ingress -n argocd --ignore-not-found=true
                     kubectl delete svc ingress-nginx-controller -n ingress-nginx || true
+                    kubectl delete secret grafana-admin-password -n monitoring --ignore-not-found=true
+                    kubectl delete secret db-credentials -n default --ignore-not-found=true
                     helm uninstall ingress-nginx -n ingress-nginx || true
-                    kubectl delete secrets --all --all-namespaces
                 '''
             }
         }
     }
 }
+
 
 
 
