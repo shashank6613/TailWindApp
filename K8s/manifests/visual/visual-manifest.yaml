@@ -46,7 +46,7 @@ spec:
     spec:
       containers:
       - name: visualizer-contain
-        image: shashank9928/visual-img:9
+        image: shashank9928/visual-img:10
         ports:
         - containerPort: 80
 ---
