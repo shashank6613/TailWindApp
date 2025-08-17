@@ -19,6 +19,7 @@ grafana:
   grafana.ini:
     server:
       root_url: "%(protocol)s://%(domain)s/grafana"
+      serve_from_sub_path: true
   service:
     type: ClusterIP
   # Disable Ingress for the Grafana component directly
@@ -46,3 +47,4 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
