@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/shashank6613/TailwindApp.git
+    repoURL: https://github.com/shashank6613/TailWindApp.git
     targetRevision: master
     path: K8s/manifests/visual
   destination:
