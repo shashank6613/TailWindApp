@@ -107,7 +107,7 @@ pipeline {
                                 echo "🚀 Installing new Prometheus release..."
                                 helm install prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring --create-namespace \
-                                    -f Prrometheus/prometheus-values.yaml \
+                                    -f Prometheus/prometheus-values.yaml \
                                     --set ingress.enabled=false \
                                     --set installCRDs=true
                             fi
@@ -202,5 +202,6 @@ pipeline {
         }
     }
 }
+
 
 
