@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Add any custom CSS here if needed, but for most cases,
+  you'll use Tailwind utility classes directly in your components.
+*/
