@@ -200,8 +200,6 @@ pipeline {
                             # Apply the ArgoCD Application manifest for your application's ingress
                             kubectl apply -f ArgoCD-config/argo-app-ingress.yaml -n argocd --validate=false
 
-                            # Apply the ArgoCD Application manifest for visualizer app manifest
-                            kubectl apply -f ArgoCD-config/visualizer-app.yaml -n argocd --validate=false
                         '''
                         echo "✅ ArgoCD Application has been applied."
                     }
@@ -236,6 +234,7 @@ pipeline {
         }
     }
 }
+
 
 
 
