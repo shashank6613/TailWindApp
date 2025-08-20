@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/shashank6613/TailWindApp.git
-    targetRevision: master
+    targetRevision: feature
     path: K8s/manifests/app  
   destination:
     server: https://kubernetes.default.svc
@@ -21,6 +21,7 @@ spec:
     env:
       - name: ARGOCD_SERVER_BASE_HREF
         value: /argocd
+
 
 
 
