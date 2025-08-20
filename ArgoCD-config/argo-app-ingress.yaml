@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/shashank6613/TailWindApp.git
-    targetRevision: master
+    targetRevision: feature
     path: K8s/Ingress/argo
   destination:
     server: https://kubernetes.default.svc
