@@ -10,7 +10,7 @@ pipeline {
 
     stages {
 
-        stage('Update kubeconfig and Patch CNI') {
+        stage('Update kubeconfig') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
@@ -182,6 +182,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Update Global kubeconfig') {
+            steps {
+                sh '''
+                    mkdir -p /home/ubuntu/.kube
+                    aws eks update-kubeconfig \
+                        --name app-clus \
+                        --region us-west-2 \
+                        --kubeconfig /home/ubuntu/.kube/config
+                    chown -R ubuntu:ubuntu /home/ubuntu/.kube
+                '''
+            }
+        }
     }
 
     post {
@@ -205,6 +218,7 @@ pipeline {
         }
     }
 }
+
 
 
 
