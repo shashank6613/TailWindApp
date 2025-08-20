@@ -2,6 +2,9 @@
 
 set -e
 
+CLUSTER_NAME="app-clus"
+REGION="us-west-2"
+
 # Define file path
 LOG_DIR="/var/log/jenkins/workspace/${JOB_NAME:-default-pipeline}"
 REPORT_FILE="${LOG_DIR}/errors_report.txt"
@@ -14,6 +17,8 @@ echo "   ERROR REPORT SUMMARY"
 echo "   Generated: $(date)"
 echo "=========================="
 } > "$REPORT_FILE"
+
+aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION}
 
 ########## POD ERRORS ##########
 echo -e "\n[POD ERRORS]" >> "$REPORT_FILE"
