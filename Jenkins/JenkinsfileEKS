@@ -209,18 +209,22 @@ pipeline {
 
         stage('Create Kubernetes DB Secret') {
             steps {
-                withCredentials([file(credentialsId: 'db-secrets-file', variable: 'DB_SECRETS_FILE')]) {
+                withAWS(credentials: 'aws-creds', region: REGION) {
                     script {
-                        withAWS(credentials: 'aws-creds', region: REGION) {
-                            echo "🔐 Creating Kubernetes secret for database credentials..."
-                            sh """
-                                kubectl create secret generic db-credentials \
-                                  --from-env-file=${DB_SECRETS_FILE} \
-                                  -n default --dry-run=client -o yaml | kubectl apply -f -
-                            """
-                        }
+                        echo "🔐 Fetching DB credentials from AWS Secrets Manager..."
+                
+                        sh """
+                            aws secretsmanager get-secret-value \
+                                --secret-id db-secrets \
+                                --query SecretString \
+                                --output text > db-secrets.env
+                        
+                            kubectl create secret generic db-credentials \
+                                --from-env-file=db-secrets.env \
+                                -n default --dry-run=client -o yaml | kubectl apply -f -
+                        """
                     }
-               }
+                }
             }
         }
     }
@@ -234,6 +238,7 @@ pipeline {
         }
     }
 }
+
 
 
 
