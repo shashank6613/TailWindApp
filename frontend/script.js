@@ -185,10 +185,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add newsletter boolean
             userData.newsletter = formData.has('newsletter');
 
+            // Declare the button and its text outside the try block
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+
             try {
                 // Show loading state
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalBtnText = submitBtn.innerHTML;
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = `
                     <div class="flex items-center justify-center">
@@ -207,6 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (!response.ok) {
+                    // This line now correctly handles the 404
                     throw new Error('Network response was not ok');
                 }
 
@@ -223,9 +226,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('There was a problem submitting your information. Please try again.');
-                // Reset button state
-                const submitBtn = form.querySelector('button[type="submit"]');
+                // We'll use a safer way to alert the user
+                showCustomAlert('There was a problem submitting your information. Please try again.');
+            
+                // This line now works because originalBtnText is in scope
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
             }
