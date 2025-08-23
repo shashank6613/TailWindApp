@@ -6,7 +6,7 @@ CLUSTER_NAME="app-clus"
 REGION="us-west-2"
 
 # Define file path
-LOG_DIR="/var/log/jenkins/workspace/${JOB_NAME:-default-pipeline}"
+LOG_DIR="/var/lib/jenkins/workspace/${JOB_NAME:-default-pipeline}"
 REPORT_FILE="${LOG_DIR}/errors_report.txt"
 mkdir -p "$LOG_DIR"
 
