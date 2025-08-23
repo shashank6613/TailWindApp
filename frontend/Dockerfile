@@ -5,7 +5,7 @@ FROM nginx:stable-alpine
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy your custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy your static site files (HTML, CSS, JS, etc.)
 COPY . /usr/share/nginx/html/
