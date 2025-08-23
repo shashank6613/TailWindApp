@@ -182,19 +182,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Update Global kubeconfig') {
-            steps {
-                sh '''
-                    mkdir -p /home/ubuntu/.kube
-                    sudo aws eks update-kubeconfig \
-                        --name app-clus \
-                        --region us-west-2 \
-                        --kubeconfig /home/ubuntu/.kube/config
-                    sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
-                '''
-            }
-        }
     }
 
     post {
@@ -218,6 +205,7 @@ pipeline {
         }
     }
 }
+
 
 
 
