@@ -2,10 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: monitoring-ingress
-  namespace: monitoring # Ensure this matches where your monitoring stack is deployed
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    
+  namespace: monitoring # Ensure this matches where your monitoring stack is deployed   
 spec:
   ingressClassName: nginx
   rules:
