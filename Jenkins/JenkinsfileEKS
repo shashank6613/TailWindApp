@@ -170,6 +170,22 @@ pipeline {
             }
         }
 
+        stage('Wait for ArgoCD Server Pod') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "⏳ Waiting for ArgoCD server pod..."
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitUntil {
+                                sh(script: "kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server --field-selector=status.phase=Running | grep argocd-server", returnStatus: true) == 0
+                            }
+                        }
+                        echo "✅ ArgoCD server is running."
+                    }
+                }
+            }
+        }
+
         stage('Deploy ArgoCD Ingress') {
             steps {
                 script {
@@ -237,6 +253,7 @@ pipeline {
         }
     }
 }
+
 
 
 
