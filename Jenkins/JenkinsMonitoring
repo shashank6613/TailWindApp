@@ -60,43 +60,71 @@ pipeline {
             }
         }
 
-        stage('Wait for LoadBalancer & Update File') {
+        stage('Wait for LoadBalancer & Update Values') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo '⏳ Waiting for LoadBalancer IP...'
+                        echo '⏳ Waiting for LoadBalancer hostname...'
                         timeout(time: 8, unit: 'MINUTES') {
                             waitUntil {
-                                def lb = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}'", returnStdout: true).trim()
+                                def lb = sh(
+                                    script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{.status.loadBalancer.ingress[0].ip}'",
+                                    returnStdout: true
+                                ).trim()
                                 echo "LoadBalancer address: ${lb}"
                                 return lb != ''
                             }
+                       }
+
+                        echo '🔍 Fetching external hostname from NGINX Ingress...'
+                        def albDns = sh(
+                            script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'",
+                            returnStdout: true
+                        ).trim()
+
+                        if (!albDns) {
+                            echo "Hostname not found, trying IP..."
+                            albDns = sh(
+                                script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}'",
+                                returnStdout: true
+                            ).trim()
                         }
 
-                        echo '🔍 Fetching External IP from NGINX Ingress...'
-                        def externalIP = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'", returnStdout: true).trim()
-                        if (!externalIP) {
-                            echo "Hostname not found, trying IP..."
-                            externalIP = sh(script: "kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].ip}'", returnStdout: true).trim()
+                        if (!albDns) {
+                            error "❌ External hostname/IP not found for ingress-nginx-controller service!"
                         }
-                        if (!externalIP) {
-                            error "❌ External IP or hostname not found for ingress-nginx-controller service!"
-                        }
-                        env.EXTERNAL_IP = externalIP
-                        echo "➡️ Current LoadBalancer external IP/hostname: ${externalIP}"
+
+                        env.ALB_DNS = albDns
+                        echo "➡️ LoadBalancer external hostname/IP: ${albDns}"
+
+                        // Replace placeholders in values files
+                        sh """
+                            sed -i 's|__ALB_DNS__|${albDns}|g' Prometheus/prometheus-values.yaml
+                            sed -i 's|__ALB_DNS__|${albDns}|g' ArgoCD/argocd-values.yaml
+                        """
+
+                        // Commit updated values files to repo
+                        sh """
+                            git config user.email "ci-bot@example.com"
+                            git config user.name "CI Bot"
+                            git add Prometheus/prometheus-values.yaml ArgoCD/argocd-values.yaml
+                            git commit -m "Update ALB DNS to ${albDns}" || echo "No changes to commit"
+                            git push origin HEAD:feature || true
+                        """
                     }
                 }
             }
         }
 
-        stage('Install Prometheus') {
+        stage('Install/Upgrade Prometheus & Upgrade ArgoCD') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo '🚀 Installing Prometheus stack via Helm...'
+                        // Install or upgrade Prometheus stack (includes Alertmanager UI)
                         sh '''
                             helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
                             helm repo update
+
                             if helm ls -n monitoring | grep -q prometheus; then
                                 echo "🔄 Upgrading existing Prometheus release..."
                                 helm upgrade prometheus prometheus-community/kube-prometheus-stack \
@@ -112,11 +140,18 @@ pipeline {
                                     --set installCRDs=true
                             fi
                         '''
+
+                        // Upgrade ArgoCD only (already installed in previous Jenkinsfile)
+                        sh '''
+                            helm upgrade argocd argo/argo-cd \
+                                -n argocd \
+                                -f ArgoCD/argocd-values.yaml
+                        '''
                     }
                 }
             }
         }
-
+        
         stage('Wait for Grafana Pod & Apply Unified Ingress') {
             steps {
                 script {
@@ -205,6 +240,7 @@ pipeline {
         }
     }
 }
+
 
 
 
