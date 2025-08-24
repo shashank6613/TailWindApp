@@ -1,20 +1,22 @@
 # Ensure the main Prometheus server is exposed via ClusterIP
-server:
+prometheus:
   service:
     type: ClusterIP
-  # Disable Ingress for the Prometheus server component directly
   ingress:
     enabled: false
-  baseURL: /prometheus  
+  prometheusSpec:
+    externalUrl: http://__ALB_DNS__/prometheus
+    routePrefix: /prometheus  
 
 # Ensure Alertmanager is exposed via ClusterIP
 alertmanager:
   service:
     type: ClusterIP
-  # Disable Ingress for the Alertmanager component directly
   ingress:
     enabled: false
-  baseURL: /alertmanager
+  alertmanagerSpec:
+    externalUrl: http://__ALB_DNS__/alertmanager
+    routePrefix: /alertmanager
 
 # Ensure Grafana is exposed via ClusterIP
 grafana:
@@ -24,7 +26,6 @@ grafana:
       serve_from_sub_path: true
   service:
     type: ClusterIP
-  # Disable Ingress for the Grafana component directly
   ingress:
     enabled: false
   adminPasswordKey: admin-password
@@ -49,5 +50,6 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
 
 
