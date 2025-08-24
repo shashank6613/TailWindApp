@@ -109,6 +109,30 @@ pipeline {
                 }
             }
         }
+
+        stage('Wait for Application Pods') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "⏳ Waiting for frontend pods..."
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitUntil {
+                                sh(script: "kubectl rollout status deployment/frontend -n default", returnStatus: true) == 0
+                            }
+                        }
+
+                        echo "⏳ Waiting for backend pods..."
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitUntil {
+                                sh(script: "kubectl rollout status deployment/backend -n default", returnStatus: true) == 0
+                            }
+                        }
+
+                        echo "✅ Frontend & Backend deployments are ready."
+                    }
+                }
+            }
+        }
     }
 
     post {
@@ -129,6 +153,7 @@ pipeline {
         }
     }
 }
+
 
 
 
