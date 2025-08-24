@@ -217,6 +217,29 @@ pipeline {
                 }
             }
         }
+
+        stage('Wait for Prometheus & Alertmanager Pods') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "⏳ Waiting for Prometheus pod..."
+                        timeout(time: 6, unit: 'MINUTES') {
+                            waitUntil {
+                                sh(script: "kubectl get pods -n monitoring -l app=prometheus -o jsonpath='{.items[*].status.phase}' | grep Running", returnStatus: true) == 0
+                            }
+                        }
+                        echo "⏳ Waiting for Alertmanager pod..."
+                        timeout(time: 6, unit: 'MINUTES') {
+                            waitUntil {
+                                sh(script: "kubectl get pods -n monitoring -l app=alertmanager -o jsonpath='{.items[*].status.phase}' | grep Running", returnStatus: true) == 0
+                            }
+                        }
+
+                        echo "✅ Prometheus & Alertmanager running."
+                    }
+                }
+            }
+        }
     }
 
     post {
@@ -240,6 +263,7 @@ pipeline {
         }
     }
 }
+
 
 
 
