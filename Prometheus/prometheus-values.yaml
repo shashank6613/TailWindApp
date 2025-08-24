@@ -5,6 +5,7 @@ server:
   # Disable Ingress for the Prometheus server component directly
   ingress:
     enabled: false
+  baseURL: /prometheus  
 
 # Ensure Alertmanager is exposed via ClusterIP
 alertmanager:
@@ -13,6 +14,7 @@ alertmanager:
   # Disable Ingress for the Alertmanager component directly
   ingress:
     enabled: false
+  baseURL: /alertmanager
 
 # Ensure Grafana is exposed via ClusterIP
 grafana:
@@ -47,4 +49,5 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
 
