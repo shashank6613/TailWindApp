@@ -13,7 +13,7 @@ spec:
     path: K8s/Ingress/argo
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
