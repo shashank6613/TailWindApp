@@ -1,0 +1,10 @@
+configs:
+  params:
+    server.rootpath: /argocd
+
+server:
+  extraArgs:
+    - --rootpath
+    - /argocd
+  config:
+    url: http://__ALB_DNS__/argocd
