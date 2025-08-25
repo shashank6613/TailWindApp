@@ -5,6 +5,8 @@ kind: Application
 metadata:
   name: my-app-ingress
   namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: nginx
 spec:
   project: default
   source:
