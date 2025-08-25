@@ -14,7 +14,7 @@ spec:
     - http:
         paths:
           # ArgoCD UI
-          - path: /argocd/*
+          - path: /argocd
             pathType: Prefix
             backend:
               service:
