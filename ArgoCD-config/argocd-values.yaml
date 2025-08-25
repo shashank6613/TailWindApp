@@ -7,4 +7,4 @@ server:
     - --rootpath
     - /argocd
   config:
-    url: http://__ALB_DNS__/argocd
+    url: http://afeb3ae60d49341e0a1f2b857d2f260a-1241394927.us-west-2.elb.amazonaws.com/argocd

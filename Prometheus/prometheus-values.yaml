@@ -5,7 +5,7 @@ prometheus:
   ingress:
     enabled: false
   prometheusSpec:
-    externalUrl: http://__ALB_DNS__/prometheus
+    externalUrl: http://afeb3ae60d49341e0a1f2b857d2f260a-1241394927.us-west-2.elb.amazonaws.com/prometheus
     routePrefix: /prometheus  
 
 # Ensure Alertmanager is exposed via ClusterIP
@@ -15,7 +15,7 @@ alertmanager:
   ingress:
     enabled: false
   alertmanagerSpec:
-    externalUrl: http://__ALB_DNS__/alertmanager
+    externalUrl: http://afeb3ae60d49341e0a1f2b857d2f260a-1241394927.us-west-2.elb.amazonaws.com/alertmanager
     routePrefix: /alertmanager
 
 # Ensure Grafana is exposed via ClusterIP
