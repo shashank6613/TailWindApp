@@ -86,8 +86,6 @@ pipeline {
                             echo "🛠 Updating image tags in deployment YAMLs..."
                             sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
                             sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
-                           
-
 
                             echo "🔧 Configuring Git..."
                             git config user.email 'jenkins@mail.com'
@@ -105,43 +103,6 @@ pipeline {
                             echo "🚀 Pushing changes..."
                             git push origin HEAD:feature
                         """
-                    }
-                }
-            }
-        }
-
-        stage('Wait for Application Pods') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: REGION) {
-
-                        echo "⏳ Waiting for frontend deployment to be created by ArgoCD..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                sh(script: "kubectl get deployment frontend -n default > /dev/null 2>&1", returnStatus: true) == 0
-                            }
-                        }
-                        echo "⏳ Waiting for frontend pods..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                sh(script: "kubectl rollout status deployment/frontend -n default", returnStatus: true) == 0
-                            }
-                        }
-
-                        echo "⏳ Waiting for backend deployment to be created by ArgoCD..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                sh(script: "kubectl get deployment backend -n default > /dev/null 2>&1", returnStatus: true) == 0
-                            }
-                        }
-                        echo "⏳ Waiting for backend pods..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                sh(script: "kubectl rollout status deployment/backend -n default", returnStatus: true) == 0
-                            }
-                        }
-
-                        echo "✅ Frontend & Backend deployments are ready."
                     }
                 }
             }
@@ -166,11 +127,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-
-
-
-
