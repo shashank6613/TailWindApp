@@ -2,7 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: monitoring-ingress
-  namespace: monitoring # Ensure this matches where your monitoring stack is deployed   
+  namespace: monitoring # Ensure this matches where your monitoring stack is deployed
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
 spec:
   ingressClassName: nginx
   rules:
