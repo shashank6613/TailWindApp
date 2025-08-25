@@ -181,12 +181,14 @@ pipeline {
                         -n monitoring --dry-run=client -o yaml | kubectl apply -f -
                         '''
                         echo '🔄 Upgrading Prometheus release so Grafana picks custom secret...'
+                        sh '''
                         helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                             --namespace monitoring \
                             -f Prometheus/prometheus-values.yaml
+                        '''
 
                         echo '⏳ Waiting for Grafana pods to restart...'
-                        kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m
+                        sh 'kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m'
 
                         echo '✅ Grafana configured with custom admin password.'
                     }
@@ -272,6 +274,7 @@ pipeline {
         }
     }
 }
+
 
 
 
