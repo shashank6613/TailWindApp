@@ -145,7 +145,7 @@ pipeline {
                         sh '''
                             helm upgrade argocd argo/argo-cd \
                                 -n argocd \
-                                -f ArgoCD/argocd-values.yaml
+                                -f ArgoCD-config/argocd-values.yaml
                         '''
                     }
                 }
@@ -274,6 +274,7 @@ pipeline {
         }
     }
 }
+
 
 
 
