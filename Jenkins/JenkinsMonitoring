@@ -182,8 +182,8 @@ pipeline {
                         '''
                         echo '🔄 Upgrading Prometheus release so Grafana picks custom secret...'
                         helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-                           --namespace monitoring \
-                           -f Prometheus/prometheus-values.yaml
+                            --namespace monitoring \
+                            -f Prometheus/prometheus-values.yaml
 
                         echo '⏳ Waiting for Grafana pods to restart...'
                         kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m
@@ -272,6 +272,7 @@ pipeline {
         }
     }
 }
+
 
 
 
