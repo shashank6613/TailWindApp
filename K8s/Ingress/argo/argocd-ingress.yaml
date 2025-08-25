@@ -4,15 +4,17 @@ metadata:
   name: argocd-ingress
   namespace: argocd # This Ingress only manages services in this namespace
   annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
           # ArgoCD UI
-          - path: /argocd(/|$)(.*)
+          - path: /argocd/*
             pathType: Prefix
             backend:
               service:
