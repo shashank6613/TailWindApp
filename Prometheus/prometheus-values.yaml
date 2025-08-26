@@ -39,11 +39,11 @@ grafana:
       isDefault: true
   resources:
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: "512Mi"
+      cpu: "250m"
     limits:
-      memory: "256Mi"
-      cpu: "200m"
+      memory: "1Gi"
+      cpu: "500m"
 
 # ServiceMonitors are fine as they are, they define how Prometheus scrapes
 serviceMonitors:
@@ -57,6 +57,7 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
 
 
 
