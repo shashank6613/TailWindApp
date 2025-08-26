@@ -184,7 +184,9 @@ pipeline {
                         sh '''
                         helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                             --namespace monitoring \
-                            -f Prometheus/prometheus-values.yaml
+                            -f Prometheus/prometheus-values.yaml\
+                            --set grafana.adminPasswordSecret=grafana-admin-password \
+                            --set grafana.adminPasswordKey=admin-password
                         '''
 
                         echo '⏳ Waiting for Grafana pods to restart...'
@@ -274,6 +276,7 @@ pipeline {
         }
     }
 }
+
 
 
 
