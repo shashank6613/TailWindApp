@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>K8 UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+  <header class="sticky top-0 z-10 bg-slate-800 border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="text-xl font-bold">Kubernetes Dashboard</h1>
+      <div id="clusterSummary" class="text-sm text-slate-300"></div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 space-y-6">
+    <nav class="flex gap-2">
+      <button data-tab="home" class="tab px-4 py-2 rounded bg-slate-800 border border-slate-700">Home</button>
+      <button data-tab="workloads" class="tab px-4 py-2 rounded hover:bg-slate-800 border border-slate-700">Workloads</button>
+      <button data-tab="gitops" class="tab px-4 py-2 rounded hover:bg-slate-800 border border-slate-700">GitOps</button>
+      <button data-tab="monitoring" class="tab px-4 py-2 rounded hover:bg-slate-800 border border-slate-700">Monitoring</button>
+    </nav>
+
+    <!-- Home -->
+    <section id="tab-home" class="tab-pane space-y-4">
+      <p class="text-slate-300">Live view of your cluster: namespaces, pods, services, ingresses, Argo CD apps, and monitoring stack.</p>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="quickStats"></div>
+    </section>
+
+    <!-- Workloads -->
+    <section id="tab-workloads" class="tab-pane hidden space-y-3">
+      <div class="flex items-center gap-2">
+        <label class="text-sm">Namespace:</label>
+        <select id="nsSelect" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm"></select>
+        <button id="refreshBtn" class="text-sm px-3 py-1 rounded bg-blue-600 hover:bg-blue-700">Refresh</button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <h3 class="font-semibold mb-2">Deployments</h3>
+          <div id="deployments" class="space-y-2"></div>
+        </div>
+        <div>
+          <h3 class="font-semibold mb-2">Services</h3>
+          <div id="services" class="space-y-2"></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-2">Pods</h3>
+        <div id="pods" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-2">Ingresses</h3>
+        <div id="ingresses" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- GitOps -->
+    <section id="tab-gitops" class="tab-pane hidden">
+      <h3 class="font-semibold mb-2">Argo CD Applications</h3>
+      <div id="argocd" class="space-y-2"></div>
+      <p class="text-xs text-slate-400 mt-2">If empty, Argo CD CRDs may not be installed or are in another cluster.</p>
+    </section>
+
+    <!-- Monitoring -->
+    <section id="tab-monitoring" class="tab-pane hidden">
+      <div id="monitoringCards" class="grid sm:grid-cols-3 gap-3"></div>
+    </section>
+
+    <!-- Logs Modal -->
+    <dialog id="logDlg" class="w-full max-w-4xl bg-slate-900 text-slate-100 rounded-lg border border-slate-700 p-0">
+      <div class="flex items-center justify-between px-4 py-2 border-b border-slate-700">
+        <div id="logTitle" class="font-semibold"></div>
+        <form method="dialog"><button class="px-3 py-1 bg-red-600 rounded">Close</button></form>
+      </div>
+      <pre id="logContent" class="p-4 overflow-auto text-xs"></pre>
+    </dialog>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
