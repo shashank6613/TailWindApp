@@ -18,7 +18,7 @@ spec:
       serviceAccountName: k8ui
       containers:
         - name: k8ui
-          image: docker.io/shashank9928/k8ui_img:{{IMAGE_TAG}}
+          image: docker.io/shashank9928/k8ui_img:7
           imagePullPolicy: IfNotPresent
           env:
             - name: BASE_PATH
