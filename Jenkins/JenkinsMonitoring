@@ -313,6 +313,7 @@ pipeline {
                         kubectl apply -f K8UI/k8s/rbac.yaml
             
                         # Apply service and ingress
+                        kubectl apply -f K8UI/k8s/deploy.yaml
                         kubectl apply -f K8UI/k8s/service.yaml
                         kubectl apply -f K8UI/k8s/ingress.yaml
 
@@ -343,6 +344,7 @@ pipeline {
         }
     }
 }
+
 
 
 
