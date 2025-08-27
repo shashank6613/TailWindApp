@@ -270,7 +270,7 @@ pipeline {
                     def buildId = env.BUILD_NUMBER
 
                     // Building and pushing the Docker image
-                    docker.build("${UI_IMAGE_NAME}:${buildId}", "-f ${K8UI_DIR}/app/Dockerfile ./${K8UI_DIR}/app}")
+                    docker.build("${UI_IMAGE_NAME}:${buildId}", "-f ${K8UI_DIR}/app/Dockerfile ./K8UI/app")
                     docker.withRegistry('https://index.docker.io/v1/', 'DOCKER_CREDENTIALS_ID') {
                         docker.image("${UI_IMAGE_NAME}:${buildId}").push()
                     }
@@ -343,4 +343,5 @@ pipeline {
         }
     }
 }
+
 
