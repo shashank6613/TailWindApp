@@ -253,6 +253,74 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy K8 UI') {
+            environment {
+                UI_IMAGE_NAME      = 'shashank9928/K8UI_IMG'
+                K8UI_DIR           = 'K8UI'
+                REGION             = 'us-west-2'
+                CLUSTER_NAME       = 'app-clus'
+                UI_DEPLOYMENT_FILE = 'K8UI/k8s/deploy.yaml'
+                K8S_NAMESPACE      = 'default' 
+                APP_NAME           = 'k8ui'    
+            }
+            steps {
+                script {
+                    def buildId = env.BUILD_NUMBER
+
+                    // Building and pushing the Docker image
+                    docker.build("${UI_IMAGE_NAME}:${buildId}", "-f ${K8UI_DIR}/Dockerfile ./${K8UI_DIR}")
+                    docker.withRegistry('https://index.docker.io/v1/', 'DOCKER_CREDENTIALS_ID') {
+                        docker.image("${UI_IMAGE_NAME}:${buildId}").push()
+                    }
+            
+                    // Define the full image tag for use in the YAML
+                    def uiImg = "${UI_IMAGE_NAME}:${buildId}"
+
+                    // Use the withCredentials block for Git operations
+                    withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh """
+                            echo "🛠 Updating image tags in deployment YAMLs..."
+                            # Use a different delimiter for sed to avoid issues with slashes in the image name
+                            sed -i "s|{{IMAGE_TAG}}|${buildId}|" ${UI_DEPLOYMENT_FILE}
+                
+                            echo "🔧 Configuring Git..."
+                            git config user.email 'jenkins@mail.com'
+                            git config user.name 'Jenkins CI'
+
+                            echo "📦 Staging files..."
+                            git add ${UI_DEPLOYMENT_FILE}
+                
+                            echo "📝 Committing..."
+                            git commit --allow-empty -m 'Update image tags to build ${buildId}' || true
+
+                            echo "🔐 Updating remote URL with credentials safely..."
+                            git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git
+
+                            echo "🚀 Pushing changes..."
+                            git push origin HEAD:feature
+                        """
+                    }
+            
+                    // AWS and kubectl commands
+                    sh """
+                        # Kube context
+                        aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION}
+
+                        # Apply manifests
+                        kubectl apply -f K8UI/k8s/namespace.yaml
+                        kubectl apply -f K8UI/k8s/rbac.yaml
+            
+                        # Apply service and ingress
+                        kubectl apply -f K8UI/k8s/service.yaml
+                        kubectl apply -f K8UI/k8s/ingress.yaml
+
+                        # Wait for rollout
+                        kubectl -n ${K8S_NAMESPACE} rollout status deploy/${APP_NAME} --timeout=240s
+                    """
+                }
+            }
+        }
     }
 
     post {
@@ -276,6 +344,7 @@ pipeline {
         }
     }
 }
+
 
 
 
