@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8ui
+  namespace: k8ui
+labels:
+  app: k8ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8ui
+  template:
+    metadata:
+      labels:
+        app: k8ui
+    spec:
+      serviceAccountName: k8ui
+      containers:
+        - name: k8ui
+          image: docker.io/shashank9928/k8ui:{{IMAGE_TAG}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BASE_PATH
+              value: /k8ui
+          ports:
+            - containerPort: 8082
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8082
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 20
