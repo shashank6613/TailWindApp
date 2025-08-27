@@ -3,13 +3,16 @@ kind: Ingress
 metadata:
   name: k8ui
   namespace: k8ui
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-          - path: /k8ui
-            pathType: Prefix
+          - path: /k8ui/(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: k8ui
