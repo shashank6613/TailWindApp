@@ -6,5 +6,5 @@ COPY . .
 ENV NODE_ENV=production
 # Run on /k8ui so it works behind path-based ingress
 ENV BASE_PATH=/k8ui
-EXPOSE 8080
+EXPOSE 8082
 CMD ["npm","start"]
