@@ -3,8 +3,8 @@ kind: Deployment
 metadata:
   name: k8ui
   namespace: k8ui
-labels:
-  app: k8ui
+  labels:
+    app: k8ui
 spec:
   replicas: 1
   selector:
