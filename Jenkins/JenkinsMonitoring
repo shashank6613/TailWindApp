@@ -262,6 +262,7 @@ pipeline {
                 CLUSTER_NAME       = 'app-clus'
                 UI_DEPLOYMENT_FILE = 'K8UI/k8s/deploy.yaml'
                 K8S_NAMESPACE      = 'default' 
+                DOCKER_CREDENTIALS_ID  = 'dock-creds'
                 APP_NAME           = 'k8ui'    
             }
             steps {
@@ -344,6 +345,7 @@ pipeline {
         }
     }
 }
+
 
 
 
