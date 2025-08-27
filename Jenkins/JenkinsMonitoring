@@ -256,7 +256,7 @@ pipeline {
 
         stage('Deploy K8 UI') {
             environment {
-                UI_IMAGE_NAME      = 'shashank9928/K8UI_IMG'
+                UI_IMAGE_NAME      = 'shashank9928/k8ui_img'
                 K8UI_DIR           = 'K8UI'
                 REGION             = 'us-west-2'
                 CLUSTER_NAME       = 'app-clus'
@@ -316,8 +316,6 @@ pipeline {
                         kubectl apply -f K8UI/k8s/service.yaml
                         kubectl apply -f K8UI/k8s/ingress.yaml
 
-                        # Wait for rollout
-                        kubectl -n ${K8S_NAMESPACE} rollout status deploy/${APP_NAME} --timeout=240s
                     """
                 }
             }
@@ -345,6 +343,7 @@ pipeline {
         }
     }
 }
+
 
 
 
