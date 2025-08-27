@@ -256,7 +256,7 @@ pipeline {
 
         stage('Deploy K8 UI') {
             environment {
-                UI_IMAGE_NAME      = 'shashank9928/k8ui_img'
+                UI_IMAGE_NAME      = 'shashank9928/k8ui'
                 K8UI_DIR           = 'K8UI'
                 REGION             = 'us-west-2'
                 CLUSTER_NAME       = 'app-clus'
@@ -344,6 +344,7 @@ pipeline {
         }
     }
 }
+
 
 
 
