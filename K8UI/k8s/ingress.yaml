@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: k8ui
+  namespace: k8ui
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /k8ui
+            pathType: Prefix
+            backend:
+              service:
+                name: k8ui
+                port:
+                  number: 80
