@@ -14,7 +14,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8082;
 // Serve everything under this base path so the app works at /k8ui
 const BASE_PATH = process.env.BASE_PATH || "/k8ui";
 
