@@ -3,7 +3,6 @@ pipeline {
     environment {
         CLUSTER_NAME = 'app-clus'
         REGION       = 'us-west-2'
-        GRAFANA_PASSWORD_CRED_ID = 'grafana-admin-pass'
         DOCKER_CREDENTIALS_ID  = 'dock-creds'
         APP_NAME     = 'k8ui'
         MONITOR_INGRESS_FILE = 'K8s/Ingress/monitoring/monitoring-ingress.yaml'
@@ -197,7 +196,7 @@ pipeline {
                         echo '🔄 Restarting Grafana to pick up new credentials...'
                         sh 'kubectl rollout restart deployment/prometheus-grafana -n monitoring'
 
-                        cho '⏳ Waiting for Grafana pods to be ready...'
+                        echo '⏳ Waiting for Grafana pods to be ready...'
                         sh 'kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m'
 
                         echo '✅ Grafana configured with custom admin username & password.'

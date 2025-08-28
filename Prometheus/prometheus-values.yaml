@@ -6,7 +6,7 @@ prometheus:
     enabled: false
   prometheusSpec:
     externalUrl: http://afeb3ae60d49341e0a1f2b857d2f260a-1241394927.us-west-2.elb.amazonaws.com/prometheus
-    routePrefix: /prometheus  
+    routePrefix: /prometheus
 
 # Ensure Alertmanager is exposed via ClusterIP
 alertmanager:
@@ -58,8 +58,3 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
-
-
-
-
-
