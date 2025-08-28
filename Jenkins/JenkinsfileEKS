@@ -15,7 +15,6 @@ pipeline {
                         echo "⚙️ Configuring AWS CLI using Jenkins credentials..."
                         sh """
                             # Configure AWS CLI using credentials from Jenkins
-                            # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are automatically set by withCredentials block
                             aws configure set aws_access_key_id \$AWS_ACCESS_KEY_ID
                             aws configure set aws_secret_access_key \$AWS_SECRET_ACCESS_KEY
                             aws configure set default.region ${REGION}
@@ -136,96 +135,6 @@ pipeline {
             }
         }
 
-        stage('Install ArgoCD') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo "🚀 Installing ArgoCD using Helm..."
-                        sh """
-                            # Check if namespace 'argocd' exists
-                            if ! kubectl get namespace argocd >/dev/null 2>&1; then
-                                echo "📦 Creating 'argocd' namespace..."
-                                kubectl create namespace argocd
-                            else
-                                echo "✅ Namespace 'argocd' already exists. Skipping creation."
-                            fi
-
-                            # Add and update ArgoCD Helm repo
-                            helm repo add argo https://argoproj.github.io/argo-helm || true
-                            helm repo update
-
-                            # Check if ArgoCD is already installed
-                            if helm status argocd -n argocd >/dev/null 2>&1; then
-                                echo "✅ ArgoCD is already installed in namespace 'argocd'. Skipping Helm install."
-                            else
-                               echo "🚀 Installing ArgoCD with Helm..."
-                                helm install argocd argo/argo-cd \\
-                                    --namespace argocd \\
-                                    --set server.service.type=ClusterIP \\
-                                    --set installCRDs=true
-                            fi
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Wait for ArgoCD Server Pod') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo "⏳ Waiting for ArgoCD server pod..."
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitUntil {
-                                sh(script: "kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server --field-selector=status.phase=Running | grep argocd-server", returnStatus: true) == 0
-                            }
-                        }
-                        echo "✅ ArgoCD server is running."
-                    }
-                }
-            }
-        }
-
-        stage('Deploy ArgoCD Ingress') {
-            steps {
-                script {
-                    withCredentials([aws(credentialsId: 'aws-creds', var: 'AWS_CREDENTIALS')]) {
-                        echo '🚀 Deploying argocd-ingress.yaml...'
-                        sh 'kubectl apply -f K8s/Ingress/argo/argocd-ingress.yaml'
-                    }
-                }
-            }
-        }
-
-        stage('Apply ArgoCD Application File') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo "checking for argocd CRD"
-                        sh '''
-                            if ! kubectl get crd applications.argoproj.io > /dev/null 2>&1; then
-                            echo "❌ ArgoCD CRD missing!"
-                            exit 1
-                            fi
-                        '''
-                        echo "🚀 Applying ArgoCD Application manifest..."
-                        sh '''
-                            # Apply the ArgoCD Application manifest for your application deployments
-                            kubectl apply -f ArgoCD-config/argo-app-main.yaml -n argocd --validate=false
-                    
-                            # Apply the ArgoCD Application manifest for your application's manifests
-                            kubectl apply -f ArgoCD-config/argo-app-ingress.yaml -n argocd --validate=false
-
-                            # Apply the ArgoCD Application manifest for your application's ingress
-                            kubectl apply -f ArgoCD-config/application-ingress.yaml -n argocd --validate=false
-
-                        '''
-                        echo "✅ ArgoCD Application has been applied."
-                    }
-                }
-            }
-        }
-
         stage('Create Kubernetes DB Secret') {
             steps {
                 withCredentials([file(credentialsId: 'db-secrets-file', variable: 'DB_SECRETS_FILE')]) {
@@ -246,10 +155,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ EKS cluster creation, ArgoCD installation, and application deployment completed (or already existed).'
+            echo '✅ EKS cluster creation  completed (or already existed).'
         }
         failure {
-            echo '❌ EKS cluster creation or ArgoCD installation job failed.'
+            echo '❌ EKS cluster creation job failed.'
         }
     }
 }

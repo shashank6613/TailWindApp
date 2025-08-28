@@ -4,8 +4,9 @@ pipeline {
         CLUSTER_NAME = 'app-clus'
         REGION       = 'us-west-2'
         GRAFANA_PASSWORD_CRED_ID = 'grafana-admin-pass'
-        APP_NAME     = 'my-app'
-        EXTERNAL_IP  = ''
+        DOCKER_CREDENTIALS_ID  = 'dock-creds'
+        APP_NAME     = 'k8ui'
+        MONITOR_INGRESS_FILE = 'K8s/Ingress/monitoring/monitoring-ingress.yaml'
     }
 
     stages {
@@ -28,37 +29,58 @@ pipeline {
         stage('Patch CNI Plugin (Conditional)') {
             steps {
                 script {
-                    echo "🔍 Checking CNI version..."
-                    def currentCNI = sh(script: "kubectl describe daemonset aws-node -n kube-system | grep Image | head -n1", returnStdout: true).trim()
-                    if (!currentCNI.contains("v1.19.5")) {
-                        echo "⚙️ Patching CNI to v1.19.5"
-                        sh "kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/v1.19.5/config/master/aws-k8s-cni.yaml"
-                    } else {
-                        echo "✅ CNI already at desired version."
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo "🔍 Checking current AWS CNI version..."
+                        def currentCNI = sh(
+                            script: "kubectl -n kube-system get ds aws-node -o jsonpath='{.spec.template.spec.containers[0].image}'",
+                            returnStdout: true
+                        ).trim()
+
+                        def desiredVersion = "v1.19.5"
+
+                        if (!currentCNI.contains(desiredVersion)) {
+                            echo "⚙️ Patching CNI to ${desiredVersion} (current: ${currentCNI})"
+                            sh """
+                                kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/${desiredVersion}/config/master/aws-k8s-cni.yaml
+                            """
+                        } else {
+                            echo "✅ CNI already at desired version: ${currentCNI}"
+                        }
                     }
                 }
             }
         }
 
-        stage('Install Ingress Controller') {
+        stage('Install/Upgrade Ingress Controller') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo '🚀 Installing NGINX Ingress Controller...'
+                        echo '🚀 Installing/Upgrading NGINX Ingress Controller...'
                         sh '''
                             helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx || true
                             helm repo update
 
-                            helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-                              --namespace ingress-nginx --create-namespace \
-                              --set controller.service.type=LoadBalancer \
-                              --set controller.publishService.enabled=true \
-                              --set controller.scope.enabled=false
+                            if helm ls -n ingress-nginx | grep -q ingress-nginx; then
+                                echo "🔄 Upgrading existing Ingress Controller..."
+                                helm upgrade ingress-nginx ingress-nginx/ingress-nginx \
+                                  --namespace ingress-nginx \
+                                  --set controller.service.type=LoadBalancer \
+                                  --set controller.publishService.enabled=true \
+                                  --set controller.scope.enabled=false
+                            else
+                                echo "🚀 Installing new Ingress Controller..."
+                                helm install ingress-nginx ingress-nginx/ingress-nginx \
+                                  --namespace ingress-nginx --create-namespace \
+                                  --set controller.service.type=LoadBalancer \
+                                  --set controller.publishService.enabled=true \
+                                  --set controller.scope.enabled=false
+                            fi
                         '''
                     }
                 }
             }
         }
+
 
         stage('Wait for LoadBalancer & Update Values') {
             steps {
@@ -98,16 +120,13 @@ pipeline {
                         echo "➡️ LoadBalancer external hostname/IP: ${albDns}"
 
                         // Replace placeholders in values files
-                        sh """
-                            sed -i 's|__ALB_DNS__|${albDns}|g' Prometheus/prometheus-values.yaml
-                            sed -i 's|__ALB_DNS__|${albDns}|g' ArgoCD-config/argocd-values.yaml
-                        """
+                        sh "sed -i 's|__ALB_DNS__|${albDns}|g' Prometheus/prometheus-values.yaml "
 
                         // Commit updated values files to repo
                         sh """
                             git config user.email "ci-bot@example.com"
                             git config user.name "CI Bot"
-                            git add Prometheus/prometheus-values.yaml ArgoCD-config/argocd-values.yaml
+                            git add Prometheus/prometheus-values.yaml
                             git commit -m "Update ALB DNS to ${albDns}" || echo "No changes to commit"
                             git push origin HEAD:feature || true
                         """
@@ -116,7 +135,7 @@ pipeline {
             }
         }
 
-        stage('Install/Upgrade Prometheus & Upgrade ArgoCD') {
+        stage('Install/Upgrade Prometheus') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
@@ -140,19 +159,12 @@ pipeline {
                                     --set installCRDs=true
                             fi
                         '''
-
-                        // Upgrade ArgoCD only (already installed in previous Jenkinsfile)
-                        sh '''
-                            helm upgrade argocd argo/argo-cd \
-                                -n argocd \
-                                -f ArgoCD-config/argocd-values.yaml
-                        '''
                     }
                 }
             }
         }
-        
-        stage('Wait for Grafana Pod & Apply Unified Ingress') {
+
+        stage('Wait for Grafana Pod & Apply monitoring Ingress') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
@@ -164,72 +176,36 @@ pipeline {
                         }
                         echo '✅ Grafana running.'
                         echo '🚀 Applying unified Ingress...'
-                        sh 'kubectl apply -f K8s/Ingress/monitoring/monitoring-ingress.yaml'
+                        sh 'kubectl apply -f ${MONITOR_INGRESS_FILE}'
                     }
                 }
             }
         }
 
-        stage('Configure Grafana Admin Password') {
+        stage('Configure Grafana Admin Credentials') {
             steps {
                 withAWS(credentials: 'aws-creds', region: REGION) {
-                    withCredentials([string(credentialsId: GRAFANA_PASSWORD_CRED_ID, variable: 'GRAFANA_PASSWORD')]) {
-                        echo '🔐 Creating Grafana admin-password secret...'
+                    withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
+                        echo '🔐 Creating/Updating Grafana admin credentials secret...'
                         sh '''
-                        kubectl create secret generic grafana-admin-password \
-                        --from-literal=admin-password="${GRAFANA_PASSWORD}" \
+                        kubectl create secret generic grafana-admin-credentials \
+                        --from-literal=admin-user="${GRAFANA_USER}" \
+                        --from-literal=admin-password="${GRAFANA_PASS}" \
                         -n monitoring --dry-run=client -o yaml | kubectl apply -f -
                         '''
-                        echo '🔄 Upgrading Prometheus release so Grafana picks custom secret...'
-                        sh '''
-                        helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-                            --namespace monitoring \
-                            -f Prometheus/prometheus-values.yaml\
-                            --set grafana.adminPasswordSecret=grafana-admin-password \
-                            --set grafana.adminPasswordKey=admin-password
-                        '''
 
-                        echo '⏳ Waiting for Grafana pods to restart...'
+                        echo '🔄 Restarting Grafana to pick up new credentials...'
+                        sh 'kubectl rollout restart deployment/prometheus-grafana -n monitoring'
+
+                        cho '⏳ Waiting for Grafana pods to be ready...'
                         sh 'kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m'
 
-                        echo '✅ Grafana configured with custom admin password.'
+                        echo '✅ Grafana configured with custom admin username & password.'
                     }
                 }
             }
         }
 
-        stage('Capture Cluster Configurations') {
-            steps {
-                script {
-                    echo "📝 Capturing cluster configurations and errors using script"
-                    sh '''
-                        # Run the script from the Scripts directory
-                        bash Scripts/capture-configs.sh
-
-                        bash Scripts/collect-error.sh
-                    '''
-                    echo "✅ Cluster configurations and errors captured successfully."
-                }
-            }
-        }
-
-        stage('Commit and Push Ingress Files to Repo') {
-            steps {
-                script {
-                    echo "📝 Configuring git and pushing changes..."
-                    withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh '''
-                            git config user.email "jenkins@mail.com"
-                            git config user.name "Jenkins CI"
-                            git add Prometheus/prometheus-values.yaml
-                            git commit -m "Update external IP to ${EXTERNAL_IP} in ingress files [ci skip]" || echo "No changes to commit"
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git HEAD:feature
-                        '''
-                        echo "✅ Changes pushed to repo."
-                    }
-                }
-            }
-        }
 
         stage('Wait for Prometheus & Alertmanager Pods') {
             steps {
@@ -254,70 +230,17 @@ pipeline {
             }
         }
 
-        stage('Deploy K8 UI') {
-            environment {
-                UI_IMAGE_NAME      = 'shashank9928/k8ui_img'
-                K8UI_DIR           = 'K8UI'
-                REGION             = 'us-west-2'
-                CLUSTER_NAME       = 'app-clus'
-                UI_DEPLOYMENT_FILE = 'K8UI/k8s/deploy.yaml'
-                K8S_NAMESPACE      = 'default' 
-                DOCKER_CREDENTIALS_ID  = 'dock-creds'
-                APP_NAME           = 'k8ui'    
-            }
+        stage('Capture Cluster Configurations') {
             steps {
                 script {
-                    def buildId = env.BUILD_NUMBER
+                    echo "📝 Capturing cluster configurations and errors using script"
+                    sh '''
+                        # Run the script from the Scripts directory
+                        bash Scripts/capture-configs.sh
 
-                    // Building and pushing the Docker image
-                    docker.build("${UI_IMAGE_NAME}:${buildId}", "-f ${K8UI_DIR}/app/Dockerfile ./K8UI/app")
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
-                        docker.image("${UI_IMAGE_NAME}:${buildId}").push()
-                    }
-            
-                    // Define the full image tag for use in the YAML
-                    def uiImg = "${UI_IMAGE_NAME}:${buildId}"
-
-                    // Use the withCredentials block for Git operations
-                    withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh """
-                            echo "🛠 Updating image tags in deployment YAMLs..."
-                            # Use a different delimiter for sed to avoid issues with slashes in the image name
-                            sed -i "s|{{IMAGE_TAG}}|${buildId}|" ${UI_DEPLOYMENT_FILE}
-                
-                            echo "🔧 Configuring Git..."
-                            git config user.email 'jenkins@mail.com'
-                            git config user.name 'Jenkins CI'
-
-                            echo "📦 Staging files..."
-                            git add ${UI_DEPLOYMENT_FILE}
-                
-                            echo "📝 Committing..."
-                            git commit --allow-empty -m 'Update image tags to build ${buildId}' || true
-
-                            echo "🔐 Updating remote URL with credentials safely..."
-                            git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git
-
-                            echo "🚀 Pushing changes..."
-                            git push origin HEAD:feature
-                        """
-                    }
-            
-                    // AWS and kubectl commands
-                    sh """
-                        # Kube context
-                        aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION}
-
-                        # Apply manifests
-                        kubectl apply -f K8UI/k8s/namespace.yaml
-                        kubectl apply -f K8UI/k8s/rbac.yaml
-            
-                        # Apply service and ingress
-                        kubectl apply -f K8UI/k8s/deploy.yaml
-                        kubectl apply -f K8UI/k8s/service.yaml
-                        kubectl apply -f K8UI/k8s/ingress.yaml
-
-                    """
+                        bash Scripts/collect-error.sh
+                    '''
+                    echo "✅ Cluster configurations and errors captured successfully."
                 }
             }
         }
@@ -331,10 +254,10 @@ pipeline {
             echo '❌ Post-deployment setup failed. Check logs for details.'
             script {
                 echo '🧹 Cleaning up Docker images, k8 objects at all namespaces, secrets etc...'
-                sh ''' 
+                sh '''
                     kubectl delete deployments,services,pods,ingress -n default --ignore-not-found=true
                     kubectl delete deployments,services,pods,ingress -n monitoring --ignore-not-found=true
-                    kubectl delete deployments,services,pods,ingress -n argocd --ignore-not-found=true
+                    kubectl delete deployments,services,pods,ingress -n k8ui --ignore-not-found=true
                     kubectl delete svc ingress-nginx-controller -n ingress-nginx || true
                     kubectl delete secret grafana-admin-password -n monitoring --ignore-not-found=true
                     kubectl delete secret db-credentials -n default --ignore-not-found=true
@@ -344,9 +267,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-
-

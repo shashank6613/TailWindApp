@@ -6,14 +6,17 @@ pipeline {
         
         FRONTEND_IMAGE_NAME        = 'shashank9928/linkproj-fe'
         BACKEND_IMAGE_NAME         = 'shashank9928/linkproj-be'
-       
+        UI_IMAGE_NAME              = 'shashank9928/k8ui_img'
         
         FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/app/frontend-deployment.yaml'
         BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/app/backend-deployment.yaml'
-        
+        UI_DEPLOYMENT_FILE         = 'K8UI/k8s/deploy.yaml'
+
+        APP_INGRESS_FILE           = 'K8s/Ingress/app/application-ingress.yaml'
+
         FRONTEND_DIR               = 'frontend'
         BACKEND_DIR                = 'backend'
-        
+        K8UI_DIR                   = 'K8UI'
 
         CLUSTER_NAME               = 'app-clus'
         REGION                     = 'us-west-2'
@@ -63,11 +66,12 @@ pipeline {
                     def buildId = BUILD_NUMBER
                     docker.build("${FRONTEND_IMAGE_NAME}:${buildId}", "-f ${FRONTEND_DIR}/Dockerfile ./${FRONTEND_DIR}")
                     docker.build("${BACKEND_IMAGE_NAME}:${buildId}", "-f ${BACKEND_DIR}/Dockerfile ./${BACKEND_DIR}")
-    
+                    docker.build("${UI_IMAGE_NAME}:${buildId}", "-f ${K8UI_DIR}/app/Dockerfile ./K8UI/app")
+
                     docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
                         docker.image("${FRONTEND_IMAGE_NAME}:${buildId}").push()
                         docker.image("${BACKEND_IMAGE_NAME}:${buildId}").push()
-                        
+                        docker.image("${UI_IMAGE_NAME}:${buildId}").push()
                     }
                 }
             }
@@ -79,20 +83,21 @@ pipeline {
                     def buildId = BUILD_NUMBER
                     def feImg = "${FRONTEND_IMAGE_NAME}:${buildId}"
                     def beImg = "${BACKEND_IMAGE_NAME}:${buildId}"
-                    
+                    def uiImg = "${UI_IMAGE_NAME}:${buildId}"
 
                     withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """
                             echo "🛠 Updating image tags in deployment YAMLs..."
                             sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
                             sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
+                            sed -i "s|{{IMAGE_TAG}}|${buildId}|" ${UI_DEPLOYMENT_FILE}
 
                             echo "🔧 Configuring Git..."
                             git config user.email 'jenkins@mail.com'
                             git config user.name 'Jenkins CI'
 
                             echo "📦 Staging files..."
-                            git add ${FRONTEND_DEPLOYMENT_FILE} ${BACKEND_DEPLOYMENT_FILE}
+                            git add ${FRONTEND_DEPLOYMENT_FILE} ${BACKEND_DEPLOYMENT_FILE} ${UI_DEPLOYMENT_FILE}
 
                             echo "📝 Committing (even if no changes)..."
                             git commit --allow-empty -m 'Update image tags to build ${buildId}' || true
@@ -101,9 +106,27 @@ pipeline {
                             git remote set-url origin https://${GIT_USER}:${GIT_PASS}@github.com/shashank6613/TailWindApp.git
 
                             echo "🚀 Pushing changes..."
-                            git push origin HEAD:feature
+                            git push origin HEAD:master
                         """
                     }
+                }
+            }
+        }
+
+        stage('apply application manifests') {
+            steps {
+                script {
+                    sh """
+                        # Kube context
+                        aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION}
+
+                        # Apply deployment manifests
+                        kubectl apply -f ${FRONTEND_DEPLOYMENT_FILE}
+                        kubectl apply -f ${BACKEND_DEPLOYMENT_FILE}
+
+                        # Apply ingress manifests
+                        kubectl apply -f ${APP_INGRESS_FILE}
+                    """
                 }
             }
         }
@@ -119,7 +142,8 @@ pipeline {
                 def id = BUILD_NUMBER
                 sh "docker rmi ${FRONTEND_IMAGE_NAME}:${id} || true"
                 sh "docker rmi ${BACKEND_IMAGE_NAME}:${id} || true"
-                
+                sh "docker rmi ${UI_IMAGE_NAME}:${id} || true"
+
                 sh "sudo apt-get purge nodejs libnode72 -y"
                 sh "sudo apt-get autoremove -y"
                 sh "sudo apt-get update"

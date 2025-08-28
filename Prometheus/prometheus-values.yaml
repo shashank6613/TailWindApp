@@ -28,10 +28,11 @@ grafana:
     type: ClusterIP
   ingress:
     enabled: false
-  adminPasswordKey: admin-password
-  adminPasswordSecret: grafana-admin-password
-  grafana:
-    additionalDataSources:
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+  additionalDataSources:
     - name: Prometheus
       type: prometheus
       access: proxy
