@@ -10,3 +10,7 @@
    - Git Credentials      >> ID = 'git-creds'           >> Type = username and password
    - Docker Credentials   >> ID = 'dock-creds'          >> Type = username and password
    - Database Credentials >> ID = 'db-secrets-file'     >> Type = secret file
+
+Go to Manage Jenkins → Credentials
+Add a new credential of type "Username with password"
+ID: grafana-creds   Username: e.g. admin   Password: e.g. supersecret
