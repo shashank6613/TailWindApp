@@ -133,34 +133,22 @@ pipeline {
             }
         }
 
-        stage('Configure Grafana Admin Credentials') {
-            steps {
-                withAWS(credentials: 'aws-creds', region: REGION) {
-                    withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
-                        echo '🔐 Creating/Updating Grafana admin credentials secret...'
-                        sh '''
-                        kubectl create secret generic grafana-admin-credentials \
-                        --from-literal=admin-user="${GRAFANA_USER}" \
-                        --from-literal=admin-password="${GRAFANA_PASS}" \
-                        -n monitoring --dry-run=client -o yaml | kubectl apply -f -
-                        '''
-
-                        echo '🔄 Restarting Grafana to pick up new credentials...'
-                        sh 'kubectl rollout restart deployment/prometheus-grafana -n monitoring'
-
-                        echo '⏳ Waiting for Grafana pods to be ready...'
-                        sh 'kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m'
-
-                        echo '✅ Grafana configured with custom admin username & password.'
-                    }
-                }
-            }
-        }
-
         stage('Install/Upgrade Prometheus') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
+                        withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
+                            echo "⚙️ Creating Prometheus values file with Jenkins credentials..."
+                            // Create a temporary values file that includes the Grafana credentials from Jenkins
+                            sh """
+                                cat <<EOF > /tmp/prometheus-helm-values.yaml
+                                grafana:
+                                  admin:
+                                    existingSecret: ""
+                                    user: "${GRAFANA_USER}"
+                                    password: "${GRAFANA_PASS}"
+                                EOF
+                            """
                         // Install or upgrade Prometheus stack (includes Alertmanager UI)
                         sh '''
                             helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
@@ -171,6 +159,7 @@ pipeline {
                                 helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring \
                                     -f Prometheus/prometheus-values.yaml \
+                                    -f /tmp/prometheus-helm-values.yaml \
                                     --set ingress.enabled=false \
                                     --set installCRDs=true
                             else
@@ -178,6 +167,7 @@ pipeline {
                                 helm install prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring --create-namespace \
                                     -f Prometheus/prometheus-values.yaml \
+                                    -f /tmp/prometheus-helm-values.yaml \
                                     --set ingress.enabled=false \
                                     --set installCRDs=true \
                                     --set installCRDs=true
