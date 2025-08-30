@@ -18,7 +18,7 @@ spec:
       serviceAccountName: k8ui
       containers:
         - name: k8ui
-          image: shashank9928/k8ui_img:4
+          image: shashank9928/k8ui_img:6
           imagePullPolicy: IfNotPresent
           env:
             - name: BASE_PATH
