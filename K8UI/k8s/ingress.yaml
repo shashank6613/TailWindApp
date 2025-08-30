@@ -11,8 +11,8 @@ spec:
   rules:
     - http:
         paths:
-          - path: /k8ui/(.*)
-            pathType: ImplementationSpecific
+          - path: /k8ui
+            pathType: Prefix
             backend:
               service:
                 name: k8ui
