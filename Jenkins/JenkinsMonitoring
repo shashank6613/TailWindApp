@@ -142,12 +142,11 @@ pipeline {
                             // Create a temporary values file that includes the Grafana credentials from Jenkins
                             sh """
                                 cat <<EOF > /tmp/prometheus-helm-values.yaml
-                                grafana:
-                                  admin:
-                                    existingSecret: ""
-                                    user: "${GRAFANA_USER}"
-                                    password: "${GRAFANA_PASS}"
-                                EOF
+                            grafana:
+                              admin:
+                                user: "${GRAFANA_USER}"
+                                password: "${GRAFANA_PASS}"
+                            EOF
                             """
                             // Install or upgrade Prometheus stack (includes Alertmanager UI)
                             sh '''
