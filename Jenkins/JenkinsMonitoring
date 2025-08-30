@@ -3,7 +3,6 @@ pipeline {
     environment {
         CLUSTER_NAME = 'app-clus'
         REGION       = 'us-west-2'
-        DOCKER_CREDENTIALS_ID  = 'dock-creds'
         APP_NAME     = 'k8ui'
         MONITOR_INGRESS_FILE = 'K8s/Ingress/monitoring/monitoring-ingress.yaml'
     }
@@ -123,11 +122,11 @@ pipeline {
 
                         // Commit updated values files to repo
                         sh """
-                            git config user.email "ci-bot@example.com"
-                            git config user.name "CI Bot"
+                            git config user.email "jenkins-ci@jenkins.com"
+                            git config user.name "jenkins-CI"
                             git add Prometheus/prometheus-values.yaml
                             git commit -m "Update ALB DNS to ${albDns}" || echo "No changes to commit"
-                            git push origin HEAD:feature || true
+                            git push origin HEAD:master || true
                         """
                     }
                 }

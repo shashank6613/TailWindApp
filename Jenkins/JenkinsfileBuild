@@ -12,8 +12,6 @@ pipeline {
         BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/app/backend-deployment.yaml'
         UI_DEPLOYMENT_FILE         = 'K8UI/k8s/deploy.yaml'
 
-        APP_INGRESS_FILE           = 'K8s/Ingress/app/application-ingress.yaml'
-
         FRONTEND_DIR               = 'frontend'
         BACKEND_DIR                = 'backend'
         K8UI_DIR                   = 'K8UI'
@@ -113,40 +111,22 @@ pipeline {
             }
         }
 
-        stage('apply application manifests') {
-            steps {
-                script {
-                    sh """
-                        # Kube context
-                        aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${REGION}
-
-                        # Apply deployment manifests
-                        kubectl apply -f ${FRONTEND_DEPLOYMENT_FILE}
-                        kubectl apply -f ${BACKEND_DEPLOYMENT_FILE}
-
-                        # Apply ingress manifests
-                        kubectl apply -f ${APP_INGRESS_FILE}
-                    """
-                }
+        post {
+            success {
+                echo '✅ Pipeline completed successfully.'
             }
-        }
-    }
+            failure {
+                echo '❌ Pipeline failed. Cleaning up Docker images...'
+                script {
+                    def id = BUILD_NUMBER
+                    sh "docker rmi ${FRONTEND_IMAGE_NAME}:${id} || true"
+                    sh "docker rmi ${BACKEND_IMAGE_NAME}:${id} || true"
+                    sh "docker rmi ${UI_IMAGE_NAME}:${id} || true"
 
-    post {
-        success {
-            echo '✅ Pipeline completed successfully.'
-        }
-        failure {
-            echo '❌ Pipeline failed. Cleaning up Docker images...'
-            script {
-                def id = BUILD_NUMBER
-                sh "docker rmi ${FRONTEND_IMAGE_NAME}:${id} || true"
-                sh "docker rmi ${BACKEND_IMAGE_NAME}:${id} || true"
-                sh "docker rmi ${UI_IMAGE_NAME}:${id} || true"
-
-                sh "sudo apt-get purge nodejs libnode72 -y"
-                sh "sudo apt-get autoremove -y"
-                sh "sudo apt-get update"
+                    sh "sudo apt-get purge nodejs libnode72 -y"
+                    sh "sudo apt-get autoremove -y"
+                    sh "sudo apt-get update"
+                }
             }
         }
     }
