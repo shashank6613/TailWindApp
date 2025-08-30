@@ -133,6 +133,30 @@ pipeline {
             }
         }
 
+        stage('Configure Grafana Admin Credentials') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: REGION) {
+                    withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
+                        echo '🔐 Creating/Updating Grafana admin credentials secret...'
+                        sh '''
+                        kubectl create secret generic grafana-admin-credentials \
+                        --from-literal=admin-user="${GRAFANA_USER}" \
+                        --from-literal=admin-password="${GRAFANA_PASS}" \
+                        -n monitoring --dry-run=client -o yaml | kubectl apply -f -
+                        '''
+
+                        echo '🔄 Restarting Grafana to pick up new credentials...'
+                        sh 'kubectl rollout restart deployment/prometheus-grafana -n monitoring'
+
+                        echo '⏳ Waiting for Grafana pods to be ready...'
+                        sh 'kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m'
+
+                        echo '✅ Grafana configured with custom admin username & password.'
+                    }
+                }
+            }
+        }
+
         stage('Install/Upgrade Prometheus') {
             steps {
                 script {
@@ -181,31 +205,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Configure Grafana Admin Credentials') {
-            steps {
-                withAWS(credentials: 'aws-creds', region: REGION) {
-                    withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
-                        echo '🔐 Creating/Updating Grafana admin credentials secret...'
-                        sh '''
-                        kubectl create secret generic grafana-admin-credentials \
-                        --from-literal=admin-user="${GRAFANA_USER}" \
-                        --from-literal=admin-password="${GRAFANA_PASS}" \
-                        -n monitoring --dry-run=client -o yaml | kubectl apply -f -
-                        '''
-
-                        echo '🔄 Restarting Grafana to pick up new credentials...'
-                        sh 'kubectl rollout restart deployment/prometheus-grafana -n monitoring'
-
-                        echo '⏳ Waiting for Grafana pods to be ready...'
-                        sh 'kubectl rollout status deployment/prometheus-grafana -n monitoring --timeout=5m'
-
-                        echo '✅ Grafana configured with custom admin username & password.'
-                    }
-                }
-            }
-        }
-
 
         stage('Wait for Prometheus & Alertmanager Pods') {
             steps {
