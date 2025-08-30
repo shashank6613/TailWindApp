@@ -149,30 +149,31 @@ pipeline {
                                     password: "${GRAFANA_PASS}"
                                 EOF
                             """
-                        // Install or upgrade Prometheus stack (includes Alertmanager UI)
-                        sh '''
-                            helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
-                            helm repo update
+                            // Install or upgrade Prometheus stack (includes Alertmanager UI)
+                            sh '''
+                                helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+                                helm repo update
 
-                            if helm ls -n monitoring | grep -q prometheus; then
-                                echo "🔄 Upgrading existing Prometheus release..."
-                                helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-                                    --namespace monitoring \
-                                    -f Prometheus/prometheus-values.yaml \
-                                    -f /tmp/prometheus-helm-values.yaml \
-                                    --set ingress.enabled=false \
-                                    --set installCRDs=true
-                            else
-                                echo "🚀 Installing new Prometheus release..."
-                                helm install prometheus prometheus-community/kube-prometheus-stack \
-                                    --namespace monitoring --create-namespace \
-                                    -f Prometheus/prometheus-values.yaml \
-                                    -f /tmp/prometheus-helm-values.yaml \
-                                    --set ingress.enabled=false \
-                                    --set installCRDs=true \
-                                    --set installCRDs=true
-                            fi
-                        '''
+                                if helm ls -n monitoring | grep -q prometheus; then
+                                    echo "🔄 Upgrading existing Prometheus release..."
+                                    helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+                                        --namespace monitoring \
+                                        -f Prometheus/prometheus-values.yaml \
+                                        -f /tmp/prometheus-helm-values.yaml \
+                                        --set ingress.enabled=false \
+                                        --set installCRDs=true
+                                else
+                                    echo "🚀 Installing new Prometheus release..."
+                                    helm install prometheus prometheus-community/kube-prometheus-stack \
+                                        --namespace monitoring --create-namespace \
+                                        -f Prometheus/prometheus-values.yaml \
+                                        -f /tmp/prometheus-helm-values.yaml \
+                                        --set ingress.enabled=false \
+                                        --set installCRDs=true \
+                                        --set installCRDs=true
+                                fi
+                            '''
+                        }
                     }
                 }
             }
