@@ -8,8 +8,8 @@ pipeline {
         BACKEND_IMAGE_NAME         = 'shashank9928/linkproj-be'
         UI_IMAGE_NAME              = 'shashank9928/k8ui_img'
         
-        FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/app/frontend-deployment.yaml'
-        BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/app/backend-deployment.yaml'
+        FRONTEND_DEPLOYMENT_FILE   = 'K8s/manifests/frontend-deployment.yaml'
+        BACKEND_DEPLOYMENT_FILE    = 'K8s/manifests/backend-deployment.yaml'
         UI_DEPLOYMENT_FILE         = 'K8UI/k8s/deploy.yaml'
 
         FRONTEND_DIR               = 'frontend'
@@ -131,3 +131,4 @@ pipeline {
         }
     }
 }
+
