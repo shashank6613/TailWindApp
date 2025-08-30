@@ -147,13 +147,15 @@ pipeline {
                                 helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring \
                                     -f Prometheus/prometheus-values.yaml \
-                                    --set ingress.enabled=false
+                                    --set ingress.enabled=false \
+                                    --set installCRDs=true
                             else
                                 echo "🚀 Installing new Prometheus release..."
                                 helm install prometheus prometheus-community/kube-prometheus-stack \
                                     --namespace monitoring --create-namespace \
                                     -f Prometheus/prometheus-values.yaml \
                                     --set ingress.enabled=false \
+                                    --set installCRDs=true \
                                     --set installCRDs=true
                             fi
                         '''
