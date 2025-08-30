@@ -176,7 +176,6 @@ pipeline {
                         """
                         echo "✅ ArgoCD is installed."
 
-                        Wait for the ArgoCD server to be ready**
                         echo "⏳ Waiting for ArgoCD server deployment to be ready..."
                         sh '''
                             kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=240s
@@ -204,3 +203,4 @@ pipeline {
         }
     }
 }
+
