@@ -88,7 +88,7 @@ pipeline {
                             echo "🛠 Updating image tags in deployment YAMLs..."
                             sed -i 's|image: .*linkproj-fe:.*|image: ${feImg}|' ${FRONTEND_DEPLOYMENT_FILE}
                             sed -i 's|image: .*linkproj-be:.*|image: ${beImg}|' ${BACKEND_DEPLOYMENT_FILE}
-                            sed -i "s|{{IMAGE_TAG}}|${buildId}|" ${UI_DEPLOYMENT_FILE}
+                            sed -i "s|image: .*k8ui_img:.*||image: ${uiImg}| ${UI_DEPLOYMENT_FILE}
 
                             echo "🔧 Configuring Git..."
                             git config user.email 'jenkins@mail.com'
@@ -131,4 +131,5 @@ pipeline {
         }
     }
 }
+
 
