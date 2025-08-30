@@ -139,12 +139,6 @@ pipeline {
                     withAWS(credentials: 'aws-creds', region: REGION) {
                         withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
                             echo "⚙️ Creating Prometheus values file with Jenkins credentials..."
-                            // Create a temporary values file that includes the Grafana credentials from Jenkins
-                            echo """grafana:
-  admin:
-    user: \"${GRAFANA_USER}\"
-    password: \"${GRAFANA_PASS}\"
-""" | tee /tmp/prometheus-helm-values.yaml
                             
                             // Install or upgrade Prometheus stack (includes Alertmanager UI)
                             sh '''
@@ -156,7 +150,9 @@ pipeline {
                                     helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                                         --namespace monitoring \
                                         -f Prometheus/prometheus-values.yaml \
-                                        -f /tmp/prometheus-helm-values.yaml \
+                                        --set grafana.admin.user="${GRAFANA_USER}" \
+                                        --set grafana.admin.password="${GRAFANA_PASS}" \
+                                        --set ingress.enabled=false \
                                         --set ingress.enabled=false \
                                         --set installCRDs=true
                                 else
@@ -164,7 +160,9 @@ pipeline {
                                     helm install prometheus prometheus-community/kube-prometheus-stack \
                                         --namespace monitoring --create-namespace \
                                         -f Prometheus/prometheus-values.yaml \
-                                        -f /tmp/prometheus-helm-values.yaml \
+                                        --set grafana.admin.user="${GRAFANA_USER}" \
+                                        --set grafana.admin.password="${GRAFANA_PASS}" \
+                                        --set ingress.enabled=false \
                                         --set ingress.enabled=false \
                                         --set installCRDs=true \
                                         --set installCRDs=true
