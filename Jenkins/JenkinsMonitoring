@@ -151,8 +151,7 @@ pipeline {
                                         --namespace monitoring \
                                         -f Prometheus/prometheus-values.yaml \
                                         --set grafana.admin.user="${GRAFANA_USER}" \
-                                        --set grafana.admin.password="${GRAFANA_PASS}" \
-                                        --set ingress.enabled=false \
+                                        --set grafana.adminPassword="${GRAFANA_PASS}" \
                                         --set ingress.enabled=false \
                                         --set installCRDs=true
                                 else
@@ -161,11 +160,9 @@ pipeline {
                                         --namespace monitoring --create-namespace \
                                         -f Prometheus/prometheus-values.yaml \
                                         --set grafana.admin.user="${GRAFANA_USER}" \
-                                        --set grafana.admin.password="${GRAFANA_PASS}" \
+                                        --set grafana.adminPassword="${GRAFANA_PASS}" \
                                         --set ingress.enabled=false \
-                                        --set ingress.enabled=false \
-                                        --set installCRDs=true \
-                                        --set installCRDs=true
+                                        --set installCRDs=true 
                                 fi
                             '''
                         }
