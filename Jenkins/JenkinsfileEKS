@@ -158,39 +158,7 @@ pipeline {
                     withAWS(credentials: 'aws-creds', region: REGION) {
                         echo "🚀 Installing ArgoCD using Helm..."
                         sh """
-                            # Check if namespace 'argocd' exists and create it if not
-                            if ! kubectl get namespace argocd >/dev/null 2>&1; then
-                                echo "📦 Creating 'argocd' namespace..."
-                                kubectl create namespace argocd
-                            fi
-
-                            # Add and update ArgoCD Helm repo
-                            helm repo add argo https://argoproj.github.io/argo-helm || true
-                            helm repo update
-
-                            # Install or upgrade ArgoCD
-                            helm upgrade --install argocd argo/argo-cd \\
-                                --namespace argocd \\
-                                --set server.service.type=ClusterIP \\
-                                --set installCRDs=true
                         """
-                        echo "✅ ArgoCD is installed."
-
-                        echo "⏳ Waiting for ArgoCD server deployment to be ready..."
-                        sh '''
-                            kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=240s
-                        '''
-                        echo "✅ ArgoCD server is now ready."
-                
-                        echo "🚀 Applying ArgoCD Application manifests..."
-                        sh '''
-                            # Apply the combined ArgoCD Application manifest that points to your other files
-                            kubectl apply -f ArgoCD-config/applications.yaml -n argocd
-                        '''
-                        echo "✅ ArgoCD Applications have been applied and are now monitoring your repo."
-                    }
-                }
-            }
         }
     }
 
@@ -203,4 +171,5 @@ pipeline {
         }
     }
 }
+
 
