@@ -35,22 +35,3 @@ spec:
     automated:
       prune: true
       selfHeal: true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: argocd-ingress
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/shashank6613/TailWindApp.git
-    targetRevision: master
-    path: K8s/Ingress/argo
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
