@@ -152,15 +152,33 @@ pipeline {
             }
         }
 
-        stage('Install and Configure ArgoCD') {
+        stage('Install Argo CD Components') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo "🚀 Installing ArgoCD using Helm..."
-                        sh """
-                        """
+                        sh 'kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -'
+
+                        echo 'Installing Operator Lifecycle Manager (OLM)...'
+                        sh 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0'
+                    
+                        // Wait for OLM to be ready to ensure the next step doesn't fail.
+                        echo 'Waiting for OLM to be ready...'
+                        sh 'kubectl wait --for=jsonpath=\'{.status.phase}\'=Succeeded installplan -n olm --timeout=7m'
+
+                        echo 'Installing Argo CD Kubernetes Operator...'
+                        sh 'kubectl create -f https://operatorhub.io/install/argocd-operator.yaml'
+
+                        // Wait for the Argo CD Operator to be ready
+                        echo 'Waiting for Argo CD Operator to be ready...'
+                        sh 'kubectl wait --for=condition=Available deployment/argocd-operator-controller-manager -n argocd --timeout=10m'
+
+                        // Create the Argo CD Instance Custom Resource (CR).
+                         echo 'Creating the Argo CD Instance from file...'
+                        sh 'kubectl apply -f ArgoCD-config/argocd-instance.yaml'
+                    }
+                }
+            }
         }
-    }
 
     post {
         success {
@@ -171,3 +189,4 @@ pipeline {
         }
     }
 }
+
