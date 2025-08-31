@@ -5,6 +5,7 @@ pipeline {
         REGION       = 'us-west-2'
         APP_NAME     = 'k8ui'
         MONITOR_INGRESS_FILE = 'K8s/Ingress/monitoring/monitoring-ingress.yaml'
+        ARGOCD_INGRESS_FILE  = 'K8s/Ingress/argo/argocd-ingress.yaml'
     }
 
     stages {
@@ -184,6 +185,8 @@ pipeline {
                         echo '✅ Grafana running.'
                         echo '🚀 Applying unified Ingress...'
                         sh 'kubectl apply -f ${MONITOR_INGRESS_FILE}'
+
+                        sh 'kubectl apply -f ${ARGOCD_INGRESS_FILE}'
                     }
                 }
             }
