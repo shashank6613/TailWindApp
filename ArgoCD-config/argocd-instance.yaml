@@ -6,3 +6,4 @@ metadata:
 spec:
   server:
     insecure: true
+    basePath: /argocd
