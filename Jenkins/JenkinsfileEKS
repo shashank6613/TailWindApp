@@ -152,30 +152,31 @@ pipeline {
             }
         }
 
-        stage('Install/Upgrade Argo CD') {
+        stage('Install/Upgrade ArgoCD') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-                        // Ensure namespace exists
-                        sh 'kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -'
+                        echo '🧹 Cleaning old ArgoCD CRDs if they exist...'
+                        sh '''
+                          kubectl delete crd applications.argoproj.io appprojects.argoproj.io applicationsets.argoproj.io || true
+                        '''
 
-                        echo 'Adding ArgoCD Helm repo...'
+                        echo '📥 Downloading ArgoCD chart CRDs...'
                         sh '''
                           helm repo add argo https://argoproj.github.io/argo-helm || true
                           helm repo update
+                          helm pull argo/argo-cd --untar --untardir ./tmp-argo
+                          kubectl apply -f ./tmp-argo/argo-cd/crds/
                         '''
 
-                        echo 'Installing/Upgrading ArgoCD via Helm...'
-                        sh '''
+                        echo '🚀 Installing/Upgrading ArgoCD...'
+                        sh """
                           helm upgrade --install argocd argo/argo-cd \
                             --namespace argocd \
-                            -f ArgoCD-config/argocd-values.yaml
-                        '''
-
-                        echo 'Waiting for ArgoCD server pod to be ready...'
-                        sh '''
-                          kubectl rollout status deployment/argocd-server -n argocd --timeout=5m
-                        '''
+                            --create-namespace \
+                            -f ArgoCD-config/argocd-values.yaml \
+                            --wait --timeout 15m
+                        """
                     }
                 }
             }
@@ -191,6 +192,7 @@ pipeline {
         }
     }
 }
+
 
 
 
