@@ -27,14 +27,7 @@ grafana:
   service:
     type: ClusterIP
   ingress:
-    enabled: true
-    ingressClassName: nginx
-    annotations:
-      kubernetes.io/ingress.class: nginx
-    hosts:
-      - __ALB_DNS__
-    path: /grafana
-    pathType: Prefix
+    enabled: false
   resources:
     requests:
       memory: "512Mi"
@@ -55,6 +48,7 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
 
 
 
