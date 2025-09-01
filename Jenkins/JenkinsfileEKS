@@ -163,7 +163,14 @@ pipeline {
                     
                         // Wait for OLM to be ready to ensure the next step doesn't fail.
                         echo 'Waiting for OLM to be ready...'
-                        sh 'kubectl wait --for=jsonpath=\'{.status.phase}\'=Succeeded installplan -n olm --timeout=7m'
+
+                        // Find the name of the dynamically created installplan and store it in a variable.
+                        def installPlanName = sh(
+                            script: "kubectl get installplan -n olm -o jsonpath='{.items[0].metadata.name}'",
+                            returnStdout: true
+                        ).trim()
+
+                        sh 'kubectl wait --for=jsonpath='{.status.phase}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m'
 
                         echo 'Installing Argo CD Kubernetes Operator...'
                         sh 'kubectl create -f https://operatorhub.io/install/argocd-operator.yaml'
@@ -190,3 +197,4 @@ pipeline {
         }
     }
 }
+
