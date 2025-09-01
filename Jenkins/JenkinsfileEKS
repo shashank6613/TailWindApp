@@ -183,7 +183,7 @@ pipeline {
                         }
 
                         echo 'Installing Argo CD Kubernetes Operator...'
-                        sh 'kubectl create -f https://operatorhub.io/install/argocd-operator.yaml'
+                        sh 'kubectl apply -f https://operatorhub.io/install/argocd-operator.yaml'
 
                         // New, more resilient wait logic.
                         // First, we wait for the Deployment to be created by the operator.
@@ -223,6 +223,7 @@ pipeline {
         }
     }
 }
+
 
 
 
