@@ -170,7 +170,7 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
-                        sh """kubectl wait --for=jsonpath='\{.status.phase\}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m"""
+                        sh """kubectl wait --for=jsonpath='{.status.phase}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m"""
 
                         echo 'Installing Argo CD Kubernetes Operator...'
                         sh 'kubectl create -f https://operatorhub.io/install/argocd-operator.yaml'
@@ -197,5 +197,6 @@ pipeline {
         }
     }
 }
+
 
 
