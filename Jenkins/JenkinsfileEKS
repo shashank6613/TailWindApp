@@ -159,13 +159,11 @@ pipeline {
                         sh 'kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -'
 
                         echo 'Installing Operator Lifecycle Manager (OLM)...'
-                        // The fix is here: using 'returnStatus: true' to allow non-zero exit code.
                         sh(
                             script: 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0',
                             returnStatus: true
                         )
                     
-                        // The fix is here. We check if an installplan exists before attempting to get its name.
                         def installPlanCount = sh(
                             script: "kubectl get installplan -n olm --no-headers 2>/dev/null | wc -l",
                             returnStdout: true
@@ -183,16 +181,24 @@ pipeline {
                         }
 
                         echo 'Installing Argo CD Kubernetes Operator...'
-                        // We are changing this command from 'create' to 'apply' for idempotency.
                         sh 'kubectl apply -f https://operatorhub.io/install/argocd-operator.yaml'
 
-                        // New, more resilient wait logic.
-                        // This single command now waits for both the existence and the availability of the deployment.
-                        echo 'Waiting for Argo CD Operator to be ready...'
-                        sh 'kubectl wait --for=condition=available deployment/argocd-operator-controller-manager -n argocd --timeout=10m'
+                        // This is the new, more resilient wait logic.
+                        // It will wait for the deployment to exist first, then wait for it to become available.
+                        echo 'Waiting for Argo CD Operator deployment to appear and be ready...'
+                        sh """
+                          for i in \$(seq 1 60); do
+                            if kubectl wait --for=condition=available deployment/argocd-operator-controller-manager -n argocd --timeout=10s; then
+                                echo "Deployment is ready!"
+                                exit 0
+                            fi
+                            echo "Deployment not ready, retrying..."
+                          done
+                          echo "Timeout: Deployment did not become available."
+                          exit 1
+                        """
 
-                        // Create the Argo CD Instance Custom Resource (CR).
-                          echo 'Creating the Argo CD Instance from file...'
+                        echo 'Creating the Argo CD Instance from file...'
                         sh 'kubectl apply -f ArgoCD-config/argocd-instance.yaml'
                     }
                 }
@@ -209,6 +215,7 @@ pipeline {
         }
     }
 }
+
 
 
 
