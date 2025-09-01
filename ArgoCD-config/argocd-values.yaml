@@ -1,6 +1,8 @@
 server:
   extraArgs:
     - --insecure
+    - --basehref=/argocd
+    - --rootpath=/argocd
   ingress:
     enabled: true
     ingressClassName: alb
