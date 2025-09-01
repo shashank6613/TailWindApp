@@ -151,6 +151,31 @@ pipeline {
                }
             }
         }
+        stage('Install/Upgrade Argo CD') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                        echo '🚀 Installing/Upgrading Argo CD...'
+                        sh '''
+                            helm repo add argo https://argoproj.github.io/argo-helm || true
+                            helm repo update
+
+                            if helm ls -n argocd | grep -q argo-cd; then
+                                echo "🔄 Upgrading existing Argo CD release..."
+                                helm upgrade argo-cd argo/argo-cd \
+                                  --namespace argocd \
+                                  -f ArgoCD-config/argocd-values.yaml
+                            else
+                                echo "🚀 Installing new Argo CD release..."
+                                helm install argo-cd argo/argo-cd \
+                                  --namespace argocd --create-namespace \
+                                  -f ArgoCD-config/argocd-values.yaml
+                            fi
+                        '''
+                    }
+                }
+            }
+        }
     }
 
     post {
