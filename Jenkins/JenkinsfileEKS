@@ -152,54 +152,30 @@ pipeline {
             }
         }
 
-        stage('Install Argo CD Components') {
+        stage('Install/Upgrade Argo CD') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
+                        // Ensure namespace exists
                         sh 'kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -'
 
-                        echo 'Installing Operator Lifecycle Manager (OLM)...'
-                        sh(
-                            script: 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0',
-                            returnStatus: true
-                        )
-                    
-                        def installPlanCount = sh(
-                            script: "kubectl get installplan -n olm --no-headers 2>/dev/null | wc -l",
-                            returnStdout: true
-                        ).trim().toInteger()
-                        
-                        if (installPlanCount > 0) {
-                            echo 'Waiting for OLM installplan to be ready...'
-                            def installPlanName = sh(
-                                script: "kubectl get installplan -n olm -o jsonpath='{.items[0].metadata.name}'",
-                                returnStdout: true
-                            ).trim()
-                            sh """kubectl wait --for=jsonpath='{.status.phase}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m"""
-                        } else {
-                            echo 'OLM installplan not found, continuing as it is likely already complete.'
-                        }
+                        echo 'Adding ArgoCD Helm repo...'
+                        sh '''
+                          helm repo add argo https://argoproj.github.io/argo-helm || true
+                          helm repo update
+                        '''
 
-                        echo 'Installing Argo CD Kubernetes Operator...'
-                        sh 'kubectl apply -f https://operatorhub.io/install/argocd-operator.yaml'
+                        echo 'Installing/Upgrading ArgoCD via Helm...'
+                        sh '''
+                          helm upgrade --install argocd argo/argo-cd \
+                            --namespace argocd \
+                            -f ArgoCD-config/argocd-values.yaml
+                        '''
 
-                        // This is the new, more resilient wait logic.
-                        // It will wait for the deployment to exist first, then wait for it to become available.
-                        echo 'Waiting for Argo CD Operator deployment to appear and be ready...'
-                        sh """
-                          for i in \$(seq 1 60); do
-                            if kubectl wait --for=condition=available deployment/argocd-operator-controller-manager -n argocd --timeout=10s; then
-                                echo "Deployment is ready!"
-                                exit 0
-                            fi
-                            echo "Deployment not ready, retrying..."
-                          done
-                          echo "Timeout: Deployment did not become available."
-                          exit 1
-                        """
-
-                        echo 'Creating the Argo CD Instance from file...'
-                        sh 'kubectl apply -f ArgoCD-config/argocd-instance.yaml'
+                        echo 'Waiting for ArgoCD server pod to be ready...'
+                        sh '''
+                          kubectl rollout status deployment/argocd-server -n argocd --timeout=5m
+                        '''
                     }
                 }
             }
@@ -215,6 +191,7 @@ pipeline {
         }
     }
 }
+
 
 
 
