@@ -120,14 +120,21 @@ pipeline {
 
                         // Replace placeholders in values files
                         sh "sed -i 's|__ALB_DNS__|${albDns}|g' Prometheus/prometheus-values.yaml "
+                         sh "sed -i 's|__ALB_DNS__|${albDns}|g' ArgoCD-config/argocd-values.yaml "
 
                         // Commit updated values files to repo
                         sh """
                             git config user.email "jenkins-ci@jenkins.com"
                             git config user.name "jenkins-CI"
-                            git add Prometheus/prometheus-values.yaml
+                            git add Prometheus/prometheus-values.yaml ArgoCD-config/argocd-values.yaml
                             git commit -m "Update ALB DNS to ${albDns}" || echo "No changes to commit"
                             git push origin HEAD:master || true
+                        """
+
+                        sh """
+                            helm upgrade argocd argo/argo-cd \
+                              --namespace argocd \
+                              -f ArgoCD-config/argocd-values.yaml
                         """
                     }
                 }
