@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   ingressClassName: nginx
   rules:
