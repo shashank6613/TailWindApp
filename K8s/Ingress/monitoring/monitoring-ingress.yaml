@@ -31,5 +31,5 @@ spec:
               service:
                 name: prometheus-grafana # CORRECT service name
                 port:
-                  number: 3000 # Grafana service typically exposes on port 80
+                  number: 80 # Grafana service typically exposes on port 80
 
