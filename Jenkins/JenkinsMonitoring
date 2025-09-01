@@ -132,7 +132,7 @@ pipeline {
                         """
 
                         sh """
-                            helm upgrade argocd argo/argo-cd \
+                            helm upgrade argo-cd argo/argo-cd \
                               --namespace argocd \
                               -f ArgoCD-config/argocd-values.yaml
                         """
