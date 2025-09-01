@@ -167,7 +167,8 @@ pipeline {
                             --namespace argocd \
                             -f ArgoCD-config/argocd-values.yaml \
                             --create-namespace \
-                            --wait --timeout 10m
+                            --set installCRDs=true \
+                            --wait --timeout 8m
                         """
                     }
                 }
@@ -184,6 +185,7 @@ pipeline {
         }
     }
 }
+
 
 
 
