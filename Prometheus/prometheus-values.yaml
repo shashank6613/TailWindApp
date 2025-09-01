@@ -5,7 +5,7 @@ prometheus:
   ingress:
     enabled: false
   prometheusSpec:
-    externalUrl: http://afeb3ae60d49341e0a1f2b857d2f260a-1241394927.us-west-2.elb.amazonaws.com/prometheus
+    externalUrl: http://__ALB_DNS__/prometheus
     routePrefix: /prometheus
 
 # Ensure Alertmanager is exposed via ClusterIP
@@ -15,7 +15,7 @@ alertmanager:
   ingress:
     enabled: false
   alertmanagerSpec:
-    externalUrl: http://afeb3ae60d49341e0a1f2b857d2f260a-1241394927.us-west-2.elb.amazonaws.com/alertmanager
+    externalUrl: http://__ALB_DNS__/alertmanager
     routePrefix: /alertmanager
 
 # Ensure Grafana is exposed via ClusterIP
@@ -27,7 +27,15 @@ grafana:
   service:
     type: ClusterIP
   ingress:
-    enabled: false
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    hosts:
+      - host: __ALB_DNS__
+        paths:
+          - path: /grafana
+            pathType: Prefix
   resources:
     requests:
       memory: "512Mi"
@@ -48,5 +56,6 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
 
 
