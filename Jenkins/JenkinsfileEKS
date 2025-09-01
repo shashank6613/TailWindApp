@@ -156,21 +156,20 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo '🧹 Cleaning old ArgoCD CRDs if they exist...'
+                       echo '🧹 Cleaning old ArgoCD CRDs if they exist...'
                         sh '''
                           kubectl delete crd applications.argoproj.io appprojects.argoproj.io applicationsets.argoproj.io || true
                         '''
 
-                        echo '📥 Downloading ArgoCD chart CRDs...'
+                        echo '📥 Installing ArgoCD CRDs...'
                         sh '''
-                          helm repo add argo https://argoproj.github.io/argo-helm || true
-                          helm repo update
-                          helm pull argo/argo-cd --untar --untardir ./tmp-argo
-                          kubectl apply -f ./tmp-argo/argo-cd/crds/
+                          kubectl apply -k https://github.com/argoproj/argo-helm/charts/argo-cd/crds?ref=main
                         '''
 
-                        echo '🚀 Installing/Upgrading ArgoCD...'
+                        echo '🚀 Installing/Upgrading ArgoCD via Helm...'
                         sh """
+                          helm repo add argo https://argoproj.github.io/argo-helm || true
+                          helm repo update
                           helm upgrade --install argocd argo/argo-cd \
                             --namespace argocd \
                             --create-namespace \
@@ -192,6 +191,7 @@ pipeline {
         }
     }
 }
+
 
 
 
