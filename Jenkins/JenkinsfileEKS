@@ -151,29 +151,6 @@ pipeline {
                }
             }
         }
-
-        stage('Install ArgoCD') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws-creds', region: REGION) {
-                        echo '🚀 Installing/Upgrading ArgoCD via Helm...'
-                        sh """
-                          kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-
-                          helm repo add argo https://argoproj.github.io/argo-helm || true
-                          helm repo update
-
-                          helm upgrade --install argocd argo/argo-cd \
-                            --namespace argocd \
-                            -f ArgoCD-config/argocd-values.yaml \
-                            --create-namespace \
-                            --set installCRDs=true \
-                            --wait --timeout 8m
-                        """
-                    }
-                }
-            }
-        }
     }
 
     post {
@@ -185,18 +162,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
