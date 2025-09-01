@@ -139,7 +139,8 @@ pipeline {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
                         withCredentials([usernamePassword(credentialsId: 'grafana-creds', usernameVariable: 'GRAFANA_USER', passwordVariable: 'GRAFANA_PASS')]) {
-                            echo "⚙️ Creating Prometheus values file with Jenkins credentials..."
+                            sh "kubectl create secret generic grafana-admin-credentials --namespace monitoring --from-literal=admin-user='${GRAFANA_USER}' --from-literal=admin-password='${GRAFANA_PASS}'"
+                            echo "Kubernetes secret 'grafana-admin-credentials' created successfully."
                             
                             // Install or upgrade Prometheus stack (includes Alertmanager UI)
                             sh '''
@@ -151,8 +152,6 @@ pipeline {
                                     helm upgrade prometheus prometheus-community/kube-prometheus-stack \
                                         --namespace monitoring \
                                         -f Prometheus/prometheus-values.yaml \
-                                        --set grafana.admin.user="${GRAFANA_USER}" \
-                                        --set grafana.adminPassword="${GRAFANA_PASS}" \
                                         --set ingress.enabled=false \
                                         --set installCRDs=true
                                 else
@@ -160,8 +159,6 @@ pipeline {
                                     helm install prometheus prometheus-community/kube-prometheus-stack \
                                         --namespace monitoring --create-namespace \
                                         -f Prometheus/prometheus-values.yaml \
-                                        --set grafana.admin.user="${GRAFANA_USER}" \
-                                        --set grafana.adminPassword="${GRAFANA_PASS}" \
                                         --set ingress.enabled=false \
                                         --set installCRDs=true 
                                 fi
