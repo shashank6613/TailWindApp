@@ -28,10 +28,6 @@ grafana:
     type: ClusterIP
   ingress:
     enabled: false
-  admin:
-    existingSecret: grafana-admin-credentials
-    userKey: admin-user
-    passwordKey: admin-password
   resources:
     requests:
       memory: "512Mi"
@@ -52,4 +48,5 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
 
