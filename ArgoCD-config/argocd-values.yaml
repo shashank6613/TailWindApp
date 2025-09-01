@@ -1,0 +1,43 @@
+server:
+  extraArgs:
+    - --insecure
+  ingress:
+    enabled: true
+    ingressClassName: alb
+    path: /argocd
+    hosts:
+      - __ALB_DNS__          # <-- placeholder replaced by Jenkins
+    annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    tls: []  # Add ACM ARN + cert manager config if you want HTTPS termination
+
+configs:
+  params:
+    server.insecure: true  # equivalent to spec.server.insecure in the operator CR
+
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+repoServer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+applicationSet:
+  enabled: true
+
+notifications:
+  enabled: true

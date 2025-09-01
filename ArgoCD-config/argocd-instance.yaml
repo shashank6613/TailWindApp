@@ -1,9 +1,0 @@
-apiVersion: argoproj.io/v1beta1
-kind: ArgoCD
-metadata:
-  name: my-argocd
-  namespace: argocd
-spec:
-  server:
-    insecure: true
-    basePath: /argocd
