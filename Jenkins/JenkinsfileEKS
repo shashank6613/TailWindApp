@@ -180,13 +180,13 @@ pipeline {
             }
         }
 
-    post {
-        success {
-            echo '✅ EKS cluster creation  completed (or already existed).'
-        }
-        failure {
-            echo '❌ EKS cluster creation job failed.'
+        post {
+            success {
+                echo '✅ EKS cluster creation  completed (or already existed).'
+            }
+            failure {
+                echo '❌ EKS cluster creation job failed.'
+            }
         }
     }
 }
-
