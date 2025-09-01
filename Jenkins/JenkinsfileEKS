@@ -165,17 +165,22 @@ pipeline {
                             returnStatus: true
                         )
                     
-                        // Wait for OLM to be ready to ensure the next step doesn't fail.
-                        echo 'Waiting for OLM to be ready...'
-                        
-                        // Find the name of the dynamically created installplan and store it in a variable.
-                        def installPlanName = sh(
-                            script: "kubectl get installplan -n olm -o jsonpath='{.items[0].metadata.name}'",
+                        // The fix is here. We check if an installplan exists before attempting to get its name.
+                        def installPlanCount = sh(
+                            script: "kubectl get installplan -n olm --no-headers 2>/dev/null | wc -l",
                             returnStdout: true
-                        ).trim()
+                        ).trim().toInteger()
                         
-                        // Now, wait for the specific installplan by name.
-                        sh """kubectl wait --for=jsonpath='{.status.phase}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m"""
+                        if (installPlanCount > 0) {
+                            echo 'Waiting for OLM installplan to be ready...'
+                            def installPlanName = sh(
+                                script: "kubectl get installplan -n olm -o jsonpath='{.items[0].metadata.name}'",
+                                returnStdout: true
+                            ).trim()
+                            sh """kubectl wait --for=jsonpath='{.status.phase}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m"""
+                        } else {
+                            echo 'OLM installplan not found, continuing as it is likely already complete.'
+                        }
 
                         echo 'Installing Argo CD Kubernetes Operator...'
                         sh 'kubectl create -f https://operatorhub.io/install/argocd-operator.yaml'
@@ -202,6 +207,7 @@ pipeline {
         }
     }
 }
+
 
 
 
