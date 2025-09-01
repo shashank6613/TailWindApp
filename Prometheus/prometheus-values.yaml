@@ -32,12 +32,6 @@ grafana:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
-  additionalDataSources:
-    - name: Prometheus
-      type: prometheus
-      access: proxy
-      url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/prometheus
-      isDefault: true
   resources:
     requests:
       memory: "512Mi"
@@ -58,3 +52,4 @@ serviceMonitors:
         path: /metrics
 
         interval: 15s
+
