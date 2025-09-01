@@ -158,24 +158,23 @@ pipeline {
                     withAWS(credentials: 'aws-creds', region: REGION) {
                         sh 'kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -'
 
+                        echo 'Installing Operator Lifecycle Manager (OLM)...'
                         // The fix is here: using 'returnStatus: true' to allow non-zero exit code.
                         sh(
                             script: 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0',
                             returnStatus: true
                         )
-
-                        echo 'Installing Operator Lifecycle Manager (OLM)...'
-                        sh 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0'
                     
                         // Wait for OLM to be ready to ensure the next step doesn't fail.
                         echo 'Waiting for OLM to be ready...'
-
+                        
                         // Find the name of the dynamically created installplan and store it in a variable.
                         def installPlanName = sh(
                             script: "kubectl get installplan -n olm -o jsonpath='{.items[0].metadata.name}'",
                             returnStdout: true
                         ).trim()
-
+                        
+                        // Now, wait for the specific installplan by name.
                         sh """kubectl wait --for=jsonpath='{.status.phase}'=Succeeded installplan/${installPlanName} -n olm --timeout=7m"""
 
                         echo 'Installing Argo CD Kubernetes Operator...'
@@ -183,10 +182,10 @@ pipeline {
 
                         // Wait for the Argo CD Operator to be ready
                         echo 'Waiting for Argo CD Operator to be ready...'
-                        sh 'kubectl wait --for=condition=Available deployment/argocd-operator-controller-manager -n argocd --timeout=10m'
+                        sh 'kubectl wait --for=condition=available deployment/argocd-operator-controller-manager -n argocd --timeout=10m'
 
                         // Create the Argo CD Instance Custom Resource (CR).
-                         echo 'Creating the Argo CD Instance from file...'
+                          echo 'Creating the Argo CD Instance from file...'
                         sh 'kubectl apply -f ArgoCD-config/argocd-instance.yaml'
                     }
                 }
@@ -203,6 +202,7 @@ pipeline {
         }
     }
 }
+
 
 
 
