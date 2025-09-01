@@ -158,6 +158,12 @@ pipeline {
                     withAWS(credentials: 'aws-creds', region: REGION) {
                         sh 'kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -'
 
+                        // The fix is here: using 'returnStatus: true' to allow non-zero exit code.
+                        sh(
+                            script: 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0',
+                            returnStatus: true
+                        )
+
                         echo 'Installing Operator Lifecycle Manager (OLM)...'
                         sh 'curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v0.34.0/install.sh | bash -s v0.34.0'
                     
@@ -197,6 +203,7 @@ pipeline {
         }
     }
 }
+
 
 
 
