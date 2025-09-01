@@ -183,25 +183,11 @@ pipeline {
                         }
 
                         echo 'Installing Argo CD Kubernetes Operator...'
+                        // We are changing this command from 'create' to 'apply' for idempotency.
                         sh 'kubectl apply -f https://operatorhub.io/install/argocd-operator.yaml'
 
                         // New, more resilient wait logic.
-                        // First, we wait for the Deployment to be created by the operator.
-                        echo 'Waiting for Argo CD Operator deployment to exist...'
-                        sh """
-                          for i in \$(seq 1 10); do
-                            if kubectl get deployment argocd-operator-controller-manager -n argocd &>/dev/null; then
-                              echo "Deployment found. Proceeding with wait..."
-                              exit 0
-                            fi
-                            echo "Deployment not found, retrying in 10 seconds..."
-                            sleep 10
-                          done
-                          echo "Timeout: Deployment did not appear within 100 seconds."
-                          exit 1
-                        """
-
-                        // Now that we know the deployment exists, wait for it to become available
+                        // This single command now waits for both the existence and the availability of the deployment.
                         echo 'Waiting for Argo CD Operator to be ready...'
                         sh 'kubectl wait --for=condition=available deployment/argocd-operator-controller-manager -n argocd --timeout=10m'
 
@@ -223,6 +209,7 @@ pipeline {
         }
     }
 }
+
 
 
 
