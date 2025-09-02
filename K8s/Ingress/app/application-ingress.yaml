@@ -9,7 +9,7 @@ spec:
     - http:
         paths:
           # Frontend application at root path
-          - path: /
+          - path: /app
             pathType: Prefix
             backend:
               service:
@@ -17,7 +17,7 @@ spec:
                 port:
                   number: 80
           # Backend API
-          - path: /api
+          - path: /app/api
             pathType: Prefix
             backend:
               service:
