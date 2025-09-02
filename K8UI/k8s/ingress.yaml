@@ -17,4 +17,4 @@ spec:
               service:
                 name: k8ui
                 port:
-                  number: 8082
+                  number: 80
