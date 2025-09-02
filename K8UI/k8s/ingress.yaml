@@ -5,23 +5,17 @@ metadata:
   namespace: k8ui
   metadata:
   annotations:
-    nginx.ingress.kubernetes.io/app-root: /k8ui
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-          - path: /k8ui
-            pathType: Prefix
+          - path: /k8ui(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: k8ui
                 port:
                   number: 80
-          - path: /k8ui/api
-            pathType: Prefix
-            backend:
-              service:
-                name: k8ui
-                port:
-                  number: 80        
