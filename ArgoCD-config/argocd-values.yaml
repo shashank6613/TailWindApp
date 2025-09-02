@@ -9,7 +9,6 @@ server:
 configs:
   params:
     server.insecure: true  # equivalent to spec.server.insecure in the operator CR
-    server.basehref: /
 
 controller:
   resources:
