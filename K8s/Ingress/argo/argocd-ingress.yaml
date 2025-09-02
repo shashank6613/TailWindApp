@@ -6,12 +6,13 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/rewrite-target: /argo-cd$1
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-          - path: /argo-cd
+          - path: /argo-cd(/|$)(.*)
             pathType: Prefix
             backend:
               service:
