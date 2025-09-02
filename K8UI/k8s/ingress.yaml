@@ -6,7 +6,6 @@ metadata:
   metadata:
   annotations:
     nginx.ingress.kubernetes.io/app-root: /k8ui
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
