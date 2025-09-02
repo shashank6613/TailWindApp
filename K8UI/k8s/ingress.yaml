@@ -18,3 +18,10 @@ spec:
                 name: k8ui
                 port:
                   number: 80
+          - path: /k8ui/api
+            pathType: Prefix
+            backend:
+              service:
+                name: k8ui
+                port:
+                  number: 80        
