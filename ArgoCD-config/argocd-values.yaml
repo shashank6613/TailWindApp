@@ -1,8 +1,6 @@
 server:
   extraArgs:
     - --insecure
-    - --basehref=/
-    - --rootpath=/
   ingress:
     enabled: false
 
