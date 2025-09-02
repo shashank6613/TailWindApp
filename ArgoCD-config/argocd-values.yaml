@@ -1,8 +1,8 @@
 server:
   extraArgs:
     - --insecure
-    - --basehref=/argocd
-    - --rootpath=/argocd
+    - --basehref=/
+    - --rootpath=/
   ingress:
     enabled: false
 
