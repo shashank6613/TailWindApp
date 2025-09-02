@@ -1,6 +1,8 @@
 server:
   extraArgs:
     - --insecure
+    - --basehref=/argo-cd
+    - --rootpath=/argo-cd
   ingress:
     enabled: false
 
