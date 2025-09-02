@@ -3,8 +3,6 @@ kind: Ingress
 metadata:
   name: k8ui
   namespace: k8ui
-  annotations:
-    nginx.ingress.kubernetes.io/app-root: /k8ui
 spec:
   ingressClassName: nginx
   rules:
