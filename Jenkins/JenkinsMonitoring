@@ -6,6 +6,8 @@ pipeline {
         APP_NAME     = 'k8ui'
         MONITOR_INGRESS_FILE = 'K8s/Ingress/monitoring/monitoring-ingress.yaml'
         ARGOCD_INGRESS_FILE  = 'K8s/Ingress/argo/argocd-ingress.yaml'
+        APPLICATION_INGRESS_FILE = 'K8s/manifests/application-ingress.yaml'
+        K8UI_INGRESS_FILE = 'K8UI/k8s/ingress.yaml'
     }
 
     stages {
@@ -223,10 +225,10 @@ pipeline {
                             kubectl create ns k8ui || true
                           
                             echo 'applying k8ui app ingress'
-                            kubectl apply -f K8UI/k8s/ingress.yaml
+                            kubectl apply -f ${K8UI_INGRESS_FILE}
 
                             echo 'applying my-app ingress'
-                            kubectl apply -f K8s/Ingress/app/application-ingress.yaml
+                            kubectl apply -f ${APPLICATION_INGRESS_FILE}
                         """
                     }
                 }
