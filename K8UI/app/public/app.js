@@ -1,6 +1,6 @@
 (function () {
-  // --- FIXED BASE PATH DETECTION ---
-  const BASE = (new URL(document.currentScript.src)).pathname.replace(/\/app\.js$/, "");
+  // Detect base path from current page location instead of hardcoding
+  const BASE = window.location.pathname.replace(/\/$/, "").replace(/\/[^/]*$/, "");
   const API = BASE + "/api";
 
   // Tabs
