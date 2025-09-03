@@ -213,6 +213,23 @@ pipeline {
             }
         }
 
+        stage('Apply my-app and k8ui's ingress') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: REGION) {
+                   
+                        sh """
+                            echo 'applying k8ui app ingress'
+                            kubectl apply -f K8UI/k8s/ingress.yaml
+
+                            echo 'applying my-app ingress'
+                            kubectl apply -f K8s/Ingress/app/application-ingress.yaml
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Capture Cluster Configurations') {
             steps {
                 script {
