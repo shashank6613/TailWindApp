@@ -1,5 +1,6 @@
 (function () {
-  const BASE = (new URL(document.currentScript.src)).pathname.replace(/\/public\/app\.js$/, "");
+  // --- FIXED BASE PATH DETECTION ---
+  const BASE = (new URL(document.currentScript.src)).pathname.replace(/\/app\.js$/, "");
   const API = BASE + "/api";
 
   // Tabs
