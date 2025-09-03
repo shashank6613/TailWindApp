@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // API URL - Replace with your actual backend API endpoint
-    const API_URL = '/api';
+    const API_URL = '/app/api';
 
     // Indian states and cities data
     const indianStatesAndCities = {
