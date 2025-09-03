@@ -221,8 +221,7 @@ pipeline {
                         sh """
                             echo 'creating namespace of apps'
                             kubectl create ns k8ui || true
-                            kubectl create ns myapp || true
-                            
+                          
                             echo 'applying k8ui app ingress'
                             kubectl apply -f K8UI/k8s/ingress.yaml
 
