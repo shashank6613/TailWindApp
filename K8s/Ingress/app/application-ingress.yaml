@@ -26,3 +26,10 @@ spec:
                 name: backend-service
                 port:
                   number: 5000
+          - path: /app/submit
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 5000        
