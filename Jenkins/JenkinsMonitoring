@@ -213,7 +213,7 @@ pipeline {
             }
         }
 
-        stage('Apply my-app and k8ui's ingress') {
+        stage('Apply my-app and k8ui-app ingress') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: REGION) {
