@@ -227,7 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('Error:', error);
                 // We'll use a safer way to alert the user
-                showCustomAlert('There was a problem submitting your information. Please try again.');
+                alert('There was a problem submitting your information. Please try again.');
             
                 // This line now works because originalBtnText is in scope
                 submitBtn.disabled = false;
