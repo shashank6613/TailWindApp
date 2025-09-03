@@ -127,7 +127,7 @@ pipeline {
                             git config user.name "jenkins-CI"
                             git add Prometheus/prometheus-values.yaml 
                             git commit -m "Update ALB DNS to ${albDns}" || echo "No changes to commit"
-                            git push origin HEAD:master || true
+                            git push origin HEAD:main || true
                         """
 
                         sh """
