@@ -9,9 +9,9 @@ metadata:
 managedNodeGroups:
   - name: stand-work
     instanceType: t3.medium
-    desiredCapacity: 2
-    minSize: 2
-    maxSize: 3
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
 
 iam:
   withOIDC: true
