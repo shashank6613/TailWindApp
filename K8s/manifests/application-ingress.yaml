@@ -11,16 +11,16 @@ spec:
   rules:
     - http:
         paths:
-          - path: /app$
-            pathType: Exact
+          - path: /app
+            pathType: Prefix
             backend:
               service:
                 name: frontend-service
                 port:
                   number: 80
           # Frontend application at root path
-          - path: /app(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /app/
+            pathType: Prefix
             backend:
               service:
                 name: frontend-service
