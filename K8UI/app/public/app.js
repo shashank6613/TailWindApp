@@ -1,6 +1,6 @@
 (function () {
-  // Detect base path from current page location instead of hardcoding
-  const BASE = window.location.pathname.replace(/\/$/, "").replace(/\/[^/]*$/, "");
+  // Hardcode base path because app is always served from /k8ui
+  const BASE = "/k8ui";
   const API = BASE + "/api";
 
   // Tabs
