@@ -5,6 +5,7 @@ metadata:
   namespace: default # This Ingress only manages services in this namespace
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
@@ -33,6 +34,3 @@ spec:
                 name: backend-service
                 port:
                   number: 5000
-  # Add annotation only here
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2        
